@@ -1,0 +1,44 @@
+@startuml
+
+' Ta có thể quy định 1 Project có thể có nhiều Student nhưng k quan tâm điều này mà bảng
+' Guide ở đây là vc sinh viên được hướng dẫn ở project nào dưới sự hướng dẫn của ai thì Guide
+' này kp quan hệ giữa Student và Project nên đúng là 1-1
+
+entity Student {
+    * **SID INT NOT NULL**
+    --
+    * SName VARCHAR(30) NOT NULL
+    * YoB INT NOT NULL
+    * Hometown VARCHAR(20) NOT NULL
+    * Class VARCHAR(20) NOT NULL
+}
+
+entity Project {
+    * **PID INT NOT NULL**
+    --
+    * PName VARCHAR(50) NOT NULL
+    * Category VARCHAR(20) NOT NULL    
+}
+entity Guide {
+    * **TID INT NOT NULL**
+    * **SID INT NOT NULL**
+    * **PID INT NOT NULL**
+    --
+    * Mark FLOAT NOT NULL
+    * Year INT NOT NULL
+}
+entity Teacher {
+    * **tid INT NOT NULL**
+    --
+    * TName VARCHAR(30) NOT NULL
+    * YoB INT NOT NULL
+    * Addresss VARCHAR(50) NOT NULL
+
+}
+Teacher }o..o{ Guide
+Student ||..|| Guide
+Project ||..|| Guide
+
+' =>Sai, toàn bị sai quan hệ 1-n thôi, Student là 1-n với Guide
+
+@enduml

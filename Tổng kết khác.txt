@@ -1,0 +1,156 @@
+Tổng kết về SQL:
+database, table, chỉnh sửa thuộc tính table và cột, thao tác với dữ liệu trong table, lấy datatable này vào table khác, schema, cấp quyền cho user, nested query, chạy các lệnh có sẵn, dùng các biến có sẵn, thao tác với biến, tạo kiểu dữ liệu riêng, lấy data relational nhiều table, group thành nhóm trong table, view, procedure, function, trigger, transaction, cte, vòng lặp và điều kiện, index, cursor, user
+
+
+TK chi tiết hơn:
+Tổng quan về database basic, khái niệm, server là gì, Azure, master database, SQL phiên bản, tùy ý custom tk và phân quyền trong SSMS, data file, tạo database diagaram. SQL Injection, quy ước đặt tên. ACID.
+Cần những gì để kết nối database với ứng dụng bên ngoài
+Các lệnh vớ vẩn xem version
+Các lệnh cơ bản trong SQL 
+Thao tác với quyền và user, ROLE, USER, LOGIN
+Các thủ tục EXEC như sp_rename
+Phân biệt DELETE FROM cả bảng, TRUNCATE TABLE, DROP TABLE
+Có 2 loại bảng tạm local và global, cách dùng, phiên làm việc là gì
+Các hàm sẵn trong SQL
+Trùm GROUP BY, ROW_NUMBER OVER PARTITION BY
+Các expression trong LIKE
+Các toán tử trong từng câu lệnh lớn
+VIEW, TRIGGER, PROCEDURE, biến, FUNCTION, TRANSACTION, cte trong SQL
+if else và while, case when then else
+Đánh index
+TYPE, RULE, CURSOR trong SQL
+Tùy chỉnh tệp tin trong SQL
+backup và restore db
+Từ khóa ESCAPE hay ' dùng trong LIKE
+3 loại contrains, các khái niệm, giá trị unknown
+
+
+DB design:
+ER-Class, mapping from ER to relational, pp chuyển đổi quan hệ bằng cách sinh entity mới
+FDs, 3 loại NF
+Axiom Armstrong, closure of a FD set, closure of a set of attribute, minimal key, equivalence set of FDs, minimal cover, convert to 3NF
+Cách máy lưu data, đánh chỉ mục index
+Relational Algebra Expresstion
+
+
+Các toán tử: >, <=, =, !=, BETWEEN AND, IS NULL, NOT, IN
+
+
+Kiến thức khó nhớ:
+Khi dùng ALTER TABLE ADD PRIMARY KEY thì chú ý table chưa có primary key và trường phải NOT NULL
+Schema dbo; type NUMERIC và DEC; OUTPUT inserted; SET IDENTITY_INSERT; <> và != dùng cái nào cũng được
+ORDER BY mặc định là ...; IDENTITY mặc định là ...; JOIN mặc định là ...
+VIEW, Stored procedure, schema có đặc điểm gì. 
+Các cách thêm primary key: ALTER TABLE ADD PRIMARY KEY, PRIMARY KEY IDENTITY cùng dòng, PRIMARY KEY(<>)
+Cách thêm các kiểu DATETIME DATE (2019-04-06 10:03:32.001)
+Phân biệt NVARCHAR(10), VARCHAR(10), CHAR(10)
+Cách dùng CASCASDE: trong ROLE phân quyền, ON UPDATE, ON DELETE -> cái gì xảy ra với mẹ thì cũng xảy ra hết với con
+Dùng CHECK inline, check có tên constraint, dùng check lẻ ở cuối, dùng CHECK khi ADD trong ALTER TABLE, CHECK khi ALTER TABLE ADD CONSTRAINT, dùng NOCHECK
+Thao tác với CONSTRAINT cũng chỉ là thêm CONSTRAINT <tên constraint> vào mỗi điều kiện là được
+Dùng FOREIGN KEY nhiều trường
+Refer bảng thì bảng cha có primary key phải xóa sau vì các bảng kia phải refer đến bảng này. TH xóa cha có PRIMARY KEY trước thì có 4 action để dùng. Cũng có thẻ chỉ xóa FOREIGN KEY của con k cần xóa hẳn con thì cũng xóa tiếp cha được. Tương tự thêm bảng con phải đảm bảo bảng cha có PRIMARY KEY giá trị đó
+Nên luôn dùng IF EXIST khi có thể VD DROP TABLE
+ALTER TABLE ALTER COLUMN phải chú ý cast được type mới được, giảm kích thước phải đảm bảo đủ
+Khi alter table với 1 column có constraint thì phải xóa constraint trước r ms đc xóa column. Khi xóa column mà là primary or foreign key phải dời key này sang trường khác mới được xóa.
+Các loại tạo CONSTRAINT mà k đặt tên thì nó tự gán cho 1 cái tên rất dài. 
+UNIQUE 2 cái null coi là trùng, PRIMARY KEY cấm null
+Dùng SET kết hợp với REPLACE để sửa 1 trường gì đó của bảng dựa trên giá trị cũ bảng đó
+PRIMARY KEY cũng là tự động đánh index. UNIQUE khác PRIMARY_KEY
+Nested query trong FROM giúp ta lấy 1 thứ từ 1 thứ phức tạp khác gọn hơn nhiều so với các cách khác nếu chỉ có lồng 1 cấp độ lấy trực tiếp
+biến varchar(max); trong procedure dùng: product_name LIKE '%' + @name + '%'
+Phân biệt procedure và view: procedure mạnh hơn vì nhận được biến còn view tĩnh. Procedure có cơ chế cache giúp tối ưu tốc độ nữa. VIEW có thể thêm data vào bảng nhưng hạn chế dùng.
+Hàm PRINT
+Phạm vi sử dụng của biến trong 1 câu lệnh bth là trong 1 cụm lệnh ta đang F5 ở thời điểm hiện tại. Tức 1 lần F5 tạo biến, lần sau F5 dùng biến là k đc. Trong procedure có OUTPUT để lấy giá trị biến ra bên ngoài nhưng phạm vi cũng chỉ dùng khi cùng câu lệnh. Từ khóa GO cũng đóng scope cũ và biến khai báo trước đó cũng k dùng được.
+Các kiểu gán giá trị cho biến: khi khởi tạo bằng DECLARE, SET @variable = (), dùng mỗi khi select từ bảng thì gán trong câu select
+char(10) là \n còn char(9) là tab
+null+'data' = null
+phân biệt biến table và bảng tạm: biến k phù hợp dữ liệu lớn vì chậm, có scope phạm vi câu lệnh, ít biên dịch hơn, ít tài nguyên hơn, sống trong tempdb như bảng tạm, k dùng được index, k ALTER TABLE từ biến
+
+Cú pháp biến table cũng khác biến bth: DECLARE @table TABLE(...); INSERT INTO @table...
+Phân biệt: SELECT x INTO y FROM #z và INSERT INTO #z SELECT x FROM y => SELECT chèn dữ liệu 1 bảng vào 1 bảng mới tên là gì. INSERT sẽ chèn dữ liệu 1 bảng vào 1 bảng khác đã có r. Thg dùng SELECT cho nhanh đỡ phải khai báo bảng lại nếu dùng nhanh. Cả 2 cái đều kiểu copy.
+Khi dùng INSERT INTO Comp2 SELECT * FROM Comp thì buộc phải tạo Comp2 từ trước có cùng cấu trúc với Comp và trường có identity phải xóa đi
+
+Cú pháp của TRIGGER khó nhớ: 
+1) CREATE TRIGGER a INSTEAD OF INSERT ON table
+FOR EACH ROW
+BEGIN
+<>
+END
+=> hoặc phần đầu dùng: CREATE TRIGGER a ON table INSTEAD OF DELETE 
+AS BEGIN  
+2) CREATE TRIGGER a ON table
+AFTER INSERT, DELETE 
+AS BEGIN 
+  SET NOCOUNT ON
+  <>
+END
+
+Phân biệt hàm và procedure. Hàm buộc returnn giá trị còn proc có thể cho return vào biến hoặc k.
+Thay vì dùng nested query lồng nhiều có thể rối, ta lưu bảng con vào biến r dùng. procedure có plan cache. hàm PRINT k dùng được trong function.
+Cú pháp của nó cũng gần như nhau:
+CREATE FUNCTION sales.udfNetSale(@quantity INT)
+RETURNS DEC(10,2)
+AS BEGIN
+    RETURN <>
+END
+và 
+CREATE  PROC uspGetProductList(@model_year SMALLINT)
+AS BEGIN
+    <>
+END;
+
+CREATE OR ALTER <> nên dùng thay cho CREATE thuần
+bảng inserted và deleted chỉ dùng trong OUTPUT, TRIGGER
+ROLLBACK dùng trong TRIGGER or TRANSACTION
+Điểm phân biệt GROUP BY là gom các nhóm trùng thành 1, còn ROW_NUMBER OVER PARTITION BY vẫn giữ mọi row ban đầu nhưng thêm ROW_NUMBER
+Dùng CASE WHEN THEN trong SELECT để đổi giá trị đầu ra rất hay
+Các hàm có thể dùng với DISTINCT để chỉ tính với các giá trị chưa từng tính. VD: AVG(DISTINCT age)
+
+
+Cách clone type bảng 1 vào bảng 2 nhưng khởi tạo rỗng: 
+SELECT * INTO CloneTable
+FROM sales.staffs
+WHERE 6>9
+
+Phân biệt: SELECT INTO là copy rồi insert
+
+cte khác gì: VIEW chỉ nên view, PROCEDURE mạnh hơn view vì nhận biến, FUNCTION như PROCEDURE nhưng buộc return. Chung quy chúng giống nhau VD ta dùng PROCEDURE có thể thay thế dùng trong mọi TH được. cte tương tự nhưng kém hơn vì chỉ dùng được 1 câu lệnh nên cũng éo tái sử dụng được, nhưng nó thg dùng cho update delete bảng được. Do đó họ thg dùng WITH cte AS kết hợp ROW_NUMBER để thao tác 1 hàm với bảng sao cho dùng thêm trường ROW_NUMBER nx nhưng nhiều khi k cần thiết -> cte khá vô dụng
+UNIQUE INDEX cũng chỉ là INDEX nhưng thêm constraints UNIQUE cho data.
+
+RULE cho ta thêm condition mạnh mẽ hơn khi thêm từng record vào database: tạo table có 1 trường -> tạo rule -> gán rule vào trường table đó. Phân biệt với CURSOR cho ta thao tác mạnh mẽ hơn khi duyệt từng dòng record trong databases thì làm gì: Tạo cursor gắn với lệnh SELECT -> chạy từng dòng của CURSOR bằng WHILE
+
+Dấu chấm phẩy là kết thúc 1 câu lệnh nên FROM rồi chấm phẩy rồi WHERE thì WHERE k tính trong câu lệnh trên. GO k được có dấu chấm phẩy
+
+Chú ý khi nhóm các cái gì độc lập của 1 bảng thì phải dùng UNIQUE field. VD count số lượng thì dùng COUNT primary key or * chứ COUNT 1 trường nó k tính trùng đâu.
+
+Phân biệt: ANY và IN
+a = ANY(list giá trị) và a IN (list element) thì IN nó chơi với 1 record còn ANY chỉ là 1 giá trị. Hơn nữa ANY cho thao tác mạnh với giá trị VD: a > ANY(3,5,7) ok luôn
+
+ALTER TABLE dùng kết hợp nhiều loại chỉnh sửa như DROP COLUMN, ALTER COLUMN, ADD COLUMN
+
+Hàm COUNT của SQL k tính DISTINCT mà tính số lượng row, tự thêm DISTINCT nếu muốn đếm số khác nhau
+
+Chú ý là tên của relationship thì nên là chủ động từ trái qua phải và đúng là đối tượng gây ra, làm nó. Chú ý giả thiết đề bài cho kp là 2 chiều và là đầu tiên thì khả năng nó chỉ là giới thiệu và kp viết thành 1 entity trong ERD. Cái nào có id thì viết riêng cái đó. K viết trường id mà nó có của cái khác, mỗi bảng buộc đều phải có id cho riêng mình. Có entity có thể k cần viết id nếu nó chỉ refer tới id của các bảng khác, khi đó các id đó sẽ tập hợp lại là primary của bảng đó nhưng k cần viết trong ERD. Nhưng primary key là bắt buộc, nếu 1 bảng k có primary key thì buộc phải tự viết id cho nó.
+VD: bảng A và B quan hệ 1-1 với A có id thì bảng B trong ERD có thể k cần viết id nếu k cần dùng nó mà lấy luôn id của bảng A thì đảm bảo nó là id duy nhất cho bảng B
+VD: bảng A và B quan hệ 1-n thì buộc A và B đều phải có id riêng cho mình vì id của A k đủ để là duy nhất cho id bảng B. Phải tùy biến thôi.
+
+
+Cách dùng toán tử: 
+Dùng trong WHERE, HAVING: BETWEEN AND, >, !=, >=, IN, query lồng IS NULL, NOT, LIKE, >= ALL, NOT EXISTS, ele = ANY(SOME với ANY là 1) (list), NOT a = b, AND, OR,
+Nhiều bảng kết hợp trong WHERE: a UNION ALL b, INTERSECT, EXCEPT, UNION. Tương tự cũng có INTERSECT ALL, EXCEPT ALL với cơ chế tương tự.
+Nhiều bảng kết hợp trong FROM bằng cách dùng các loại JOIN: JOIN(FROM a,b WHERE a.id = b.id), FULL OUTER JOIN, LEFT JOIN, RIGHT JOIN, CROSS JOIN (FROM a,b), NATURAL [LEFT, RIGHT] JOIN, 
+Các lệnh kết hợp sau SELECT, DELETE: Các hàm, TOP 10, *, DISTINCT, 
+Sau FROM: nested query có as Name,
+Thực tế ta muốn dùng UNION trong FROM cũng ok thôi. Điểm khác biệt lớn của UNION và JOIN là UNION thì các bảng phải cùng cấu trúc
+
+
+Các CONSTRAINT: 
+UNIQUE, CHECK, PRIMARY KEY, FOREIGN KEY REFERENCES, IDENTITY, DEFAULT, NOT NULL, NULL
+
+
+1 số hàm hay dùng - aggregation function:
+Hàm ROW_NUMBER() OVER (<>), SUM, AVG, MIN, MAX, YEAR, COUNT, ISNULL(,), COALESCE(,,), ISNUMERIC, DATEPART(,), DATENAME(,), DATEDIFF(,,), DATEADD(,,), GETDATE(), RAND(), ABS(), REPLACE(,,), LEN, CONCAT, FORMAT(,,), DAY, 
+
+Type biến: 
+BIGINT, INT, DATETIME, DATE, BIT, TIME, CHAR(10), NCHAR dùng có tiền tố N'abc', VARCHAR, NVARCHAR, CHAR mặc định là 1 tức kiểu 1 ký tự, TEXT, DEC(10,2)
+

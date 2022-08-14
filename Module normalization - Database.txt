@@ -1,0 +1,84 @@
+# Normalization:
+
+-> Nguyên tắc decompose: K được thiếu attribute, k được thiếu dependency, k thể join được lại
+
+-> Cách design database: trong dự án SE ta dùng 1 bảng lớn là ticket để lưu tất cả data rất ok. Đây cũng là cách design xử lý toàn vẹn nhưng nhược điểm là table rất lớn sẽ dễ loạn, data có thể bị thừa, nếu có nhiều loại data thì k thể insert chỉ 1 loại được mà phải có tất cả, ít nhất là PK k thể null. update k tối ưu. VD khách A mua vé vào 2 thời điểm sẽ là 2 vé, bh muốn update tên cho khách A thì phải update ở 2 chỗ, thử tưởng tượng nếu khách A mua 100 vé sau 1 tháng thì update phát chết mệt. Or ta xóa 1 khách thì thông tin về vé có khách đó mua sẽ mất theo.
+=> Bước Normalization trong database design sẽ giải quyết vấn đề. Nó sẽ đảm bảo việc chia bảng từ 1 bảng lớn sao cho các thuộc tính đầy đủ và k bị trùng nhau, tối ưu database, quan hệ phụ thuộc được tối ưu(k bị kiểu A phụ thuộc vào B và A phụ thuộc vào C xong B lại phụ thuộc vào C thì bị thừa, nó giảm thành A phụ thuộc vào B, B vào C là dừng), các thuộc tính phụ sẽ chỉ phụ thuộc đầy đủ vào những gì nó cần ở mức vừa đủ.
+Tìm FD là 1 bước quan trọng của design database, cần tìm 1 minimal set of FD
+
+Normalization có mục đích là giảm anomilies, giảm data redundance. Khi data thừa dư và data dị thường bị giảm đi thì sẽ searching dễ hơn.
+Vc normalization tách ra nhiều bảng sẽ tạo thêm các trường primary key trong các bảng phụ. Điều này cũng gọi là redundance nhưng là cần thiết để đảm bảo tính nhất quán của dữ liệu
+Anomalies ở đây là kiểu 1 bảng (student_id, subject_id,...) thì cặp primary key là cả 2 cái id nên nếu student k có thì k thể thêm môn học và ngược lại. Ta k thể insert anomalies là giá trị null vào PK, TH đó gọi là anomalies.
+Redundant information trong DB gây data bị inconsistent, k còn nhất quán thì rất khó để xác định giá trị nào là đúng nhất và xác định giá trị nào là mới nhất.
+
+Normalization k giúp query nhanh hơn vì ta muốn lấy data có thể phải join nhiều table nhưng normalization giúp tối ưu bộ nhớ, loại bỏ data thừa và dễ maintain.
+
+-> Các bước tìm 3NF: 
+-> tạo ra relation R và FDs dạng chữ cái 
+-> tìm minimal cover: Với A->BC thì tách ra A->B, A-> C(bước làm đầu tiên); rút gọn tối thiểu các cái bên trái VD A->B, ABC->E thành A->B, AC->E. Rút gọn tương tự với các cái bên phải Vd D->E thì AFG->DHE có thể thành AFG->DH. Cũng dựa vào transitive rule VD B->A, B->D, D->A thì B->D, D->A tức B->A thừa. Tương tự có đầy đủ ở vế trái suy ra được element bỏ đi ở vế phải VD A->B thì AD->BF thành AD->F. Minimal cover vẫn thỏa mãn đầy đủ các cụm dependency. Minimal cover loại FD nhỏ nhất sao cho từ nó vẫn suy lại được FD gốc
+-> Tìm minimal key: lấy tất cả và bỏ từng chữ cái xuất hiện ở bên phải của các dependency nếu các chữ cái đã có có thể suy ra nó được, tức là dựa vào các chữ đã có thì vẫn có thể suy ra được tất cả các chữ như ban đầu, bỏ đến khi nào k bỏ được nữa thì thôi. Có thể làm nhanh VD A->B, A-> C thì lấy mỗi A, tự suy ra nhanh miễn là dựa vào key và FDs là tìm ra mọi phần tử còn lại 
+-> Gộp các cục F vào thành từng Ri: làm ngược lại quy tắc 1 của minimal cover VD A->B, A->C thành ABC. Các cục Ri tối giản hơn Minimal cover vì có thể k còn giữ các dependency mà chỉ cần có đủ các chữ cái xuất hiện ít nhất 1 lần.
+-> tìm minimal key có trong các Ri không và quyết định có Rkey mới hay không.
+=> Các bước ở trên là chuẩn, k phải đắn đo nghĩ các bước khác, k rơi vào các TH đó thì nó k bỏ đi được
+
+-> VD: tập hợp universal attributes R(studentid, name, birth, advisor, department, semester, course, grade)
+Ta phải biết cái gì phụ thuộc minimal vào cái gì. Nên xây các functional dependencies:
+F={studentid->(name, birth); advisor->department; (studentid, semester, course)->(grade, advisor, department);} => dựa vào cái bên trái sẽ tìm được cái bên phải
+Ký hiệu A B C D E F G H thì:
+F={A->BC; D->E; AFG->HDE}
+Tìm minimal cover là phụ thuộc tối thiểu dựa vào các cái trong F
+=> {A->B, A-> C, D->E, AFG->HD}
+=> Minimal key cục này là AFG
+=> R1(ABC), R2(DE), R3(AFGDH) do R3 chứa AFG minimal key nên 3 cái này là decomposition into 3NF(nếu k thì phải thêm R4(AFG) vào).
+
+-> 1 số quy tắc áp dụng để tìm 3NF là:
+A->BC thì minimal cover sẽ phân ra A->B, A->C
+AB->C và AB-> E thì là AB->CE
+FD là D->C, D->EB thì gom lại thành FD là D->EBC
+bị quay vòng AB->C và C->A thì bỏ 1 cái đi, tùy cái nào cho kết quả ngắn hơn
+many to many thì lấy tất cả và bỏ đi cả bên trái và bên phải những cái mà phụ thuộc vào cái còn lại ở mỗi bên
+=> còn lại cứ làm theo các bước. Từ 1 bảng + FD ta suy ra được cách chia bảng tối ưu 3NF
+
+Nếu k thuộc 1NF, 2NF, 3NF thì gọi là UNF là TH có giá trị cột bị trùng trong database -> sai mà là có cột là multivalue attributes. Còn trùng thì 1NF vẫn trùng
+
+-> VD Use case cho DB: giả sử ban đầu có 1 bảng lớn và quan hệ phụ thuộc 
+Result(studentID, name, dob, gender, result, grade, subjectID, subjectName, credit) biết rằng grade theo khoảng result VD [0,4) là F và [4,5) là D,..
+Student -> studentID, name, dob, gender
+Subject -> subjectID, subjectName, credit
+Student, Subject -> Result (cả grade, subjectname nhưng thừa thãi ra)
+Result -> Grade
+
+C1 ta chia 3 bảng kiểu:
+Student: studentID, name, dob, gender
+Subject: subjectID, subjectName, credit
+Result: studentID, subjectID, result, grade
+=> Ta cho các trường phụ thuộc chặt chẽ vào nhau sẽ gom ra 1 bảng riêng. VD result và grade phụ thuộc chặt vào Student và Subject sẽ ra bảng riêng. Dù v cách này chưa tối ưu khi database có cực nhiều phần tử. 
+Các partialy dependency ở đây đều tách ra thành bảng riêng để tất cả cùng fully. Tưởng ok nhưng thực ra vẫn có thể tối ưu hơn nx. VD bảng Result có 1 triệu phần tử thì cột grade có 1 triệu record nhưng nếu tách ra như C3 thì cột có vài triệu giá trị này thay thế bằng 1 bảng Grade vài record thôi, kiểu bảng constant để refer tới
+C2 ta chia ra:
+Student và subject
+Result1(StudentID, SubjectID, result)
+Grade(Result, Grade)
+=> sẽ giảm được 1 trường nhưng cái này lại k ổn vì grade phụ thuộc vào result là float có vô số phần tử
+C3: Student và Subject, Result(StudentID, SubjectID, result), Grade(min, max, grade)
+
+-> Tiêu chuẩn đánh giá sự tối ưu: 
+1NF: trong 1 bảng k được có record composite hay multivalue
+2NF: tất cả các attributes khác trong bảng đều fully dependency vào primary key. Giả sử primary key là 2 trường thì mọi key khác đều phụ thuộc vào cả 2 trường mới định nghĩa ra 1 giá trị chứ kp 1 trường
+3NF: tất cả atts đều fully và directly phụ thuộc vào primary key. Chứ kp là transitively dependent VD B phụ thuộc A, C phụ thuộc B thì C phụ thuộc A với A là primary key -> kp là như v như cách 1 bài trên là 2NF
+
+-> VD bài tập FD:
+ABC->D và D->A thì ta giải ra 3NF R1(ABCD) với key là ABC
+Ta cũng có thể giải ra kiểu minimal là 2 cái trên nhưng key là BCD, khi đó có thể chọn R1(DA), R2 nếu lấy cái còn lại thì R1 thừa nhưng nếu lấy key BCD thì vẫn ra đủ thì ok nên R1(DA) D là key, R2(BCD) với BCD là key
+C1 k thể hiện được constraint D->A, C2 k thể hiện được constraint ABC->D. Khi đó nếu trong dự án thực tế mà cần dùng đến constraint đó hay trình bày trong bài phải đầy đủ thì ta phải viết: C1 có thể thêm 1 bảng DA với D là key để đảm bảo all constraints are check. Dù sao thì như trên cũng là 3NF r. Điều này là quan trọng vì show database cho khách hàng mà điều kiện ràng buộc bị mất là k được, chịu redundance storage.
+
+-> Prime attribute là attribute thành phần của candidate key
+
+-> Thực chất quy tắc tìm minimal cover nó bảo toàn cả FD và attribute sẵn rồi. Có tool. Cách tìm minimal cover k thể sai:
+1) Biến tất cả kiểu X -> {A1,A2} thành X->A1, X->A2
+2) Rút gọn vế trái và vế phải nếu có va chạm. VD: A->B, AB->C thành A->B,A->C
+3) Bỏ các FD mà nếu bỏ đi thì F+ trước bỏ = F+ sau bỏ, tức bỏ đi vẫn đảm bảo quan hệ về dependency và attribute, thỏa mãn cả tc transitivity
+=> Nhưng khi tìm 3NF thì có thể FD bị mất
+
+VD: A->B,B->A thì minimal cover vẫn thế và 3NF {B->A} với key = A. Lấy 3NF ở minimal cover chỉ cần tối thiểu đủ attribute và key nên nó có thể k bảo toàn FD
+VD: A->B,BC->E,ED->A thì minimal cover vẫn thế(theo đúng 3 bước bên trên) và 3NF vẫn thế và thêm R4 là key là ACD
+

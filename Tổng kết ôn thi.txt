@@ -1,0 +1,83 @@
+Các kiến thức ôn thi: slide, txt, code
+Database/DB Design: 
+--> ERD:
+---> ER là topdown, FD và Normalization là bottom up
+---> Entity có 2 loại weak và strong
+---> Attribute có 4 loại atomic/composite, single-valued/multi-valued, stored/derived, key attribute
+---> Relationship: 11, 1n, nm, recursive => mapping process từng loại
+--> FD:
+---> Chứng minh 1 FD từ nhiều FDs khác: dùng 3 tính chất của AxiomArmstrong tạo transitivity
+---> Tìm closure of a set of attributes based on F: xét từng FDs và union vế phải nếu vế trái là tập con
+---> Tìm minimal key: có tất cả và loại dần đi
+---> Chứng minh 1 set of FDs là 1 phủ của set of FDs khác: lấy từ FD của G và tìm closure của bên trái từ F
+----> Chứng minh F+=G+
+---> Tìm minimal cover of set of FDs: 3 bước tách ra -> loại bỏ -> rút gọn
+--> Normalization
+---> Vấn đề anomalies và redundancies trong DB
+---> 3 kiểu dependency
+---> 3 kiểu normal form và UNF
+---> 3 Nguyên tắc decompose universal relation
+---> cách chuyển sang 3NF, cách lấy 3NF từ minimal cover
+
+Database/Storage:
+--> 3 tầng schema của database: keyval, bảng query, view 
+--> Physical database design: tùy SELECT hay INSERT
+---> Primary file organization: unordered, ordered, hash
+---> Secondary organization: index
+Database/Đánh index
+--> BTree: tốt cho range query hơn hash
+--> Cơ chế lưu trên đĩa: bản chất của optimizer và index
+--> Sparse/dense index: trỏ page hay trỏ đến record
+--> Clustered và nonclustered: sx lại và k sx lại
+SQL/Lệnh Index
+--> Câu lệnh index trong SQL
+
+Database/Algebric expression and query processing
+--> Algebra: unary và binary operator
+---> Set operation: Union, Intersection, Difference, Cartesian product
+---> Relational algebra operator: Selection, Projection, Rename, Inner join, Division, Natural join, Outer join, Aggregation(group by, function bth)
+--> Query processing:
+---> 3 bước xử lý query: parser, optimizer
+---> 3 Bước thực hiện của optimization
+----> Equivalence transformation: 
+----> Exec alg of RA: dùng các operator để thực hiện thuật toán optimize như 1Pass, MultiPass
+----> Cost estimation: phụ thuộc vào số block, tuple, distinct value
+
+SQL/Lệnh về table
+--> Constraint
+---> UNIQUE constraint
+---> PRIMARY/FOREIGN KEY constraint
+----> Phân biệt 5 loại key
+----> Quy tắc khi delete và create
+--> Attributed/tuple-based checks: ĐK độc lập về giá trị/phụ thuộc lẫn nhau trong tuple
+--> Asserttion: mọi update đều check
+SQL/Dùng Trigger
+--> Event, Condition, Action, Level, Referencing
+--> Bảng inserted và deleted
+--> Các loại trigger TH dùng khác nhau
+
+SQL/Phân quyền:
+-> Tạo user
+-> Trao và thu hồi quyền hạn: USAGE, EXECUTE, UNDER, TRIGGER, WITH GRANT OPTION
+--> Revoke có CASCADE và RESTRICT
+
+SQL/View:
+-> Virtual view: query thuần
+-> Materizalized view: thực sự là stored table
+-> Cách update: trigger, MV có lệnh REFRESH periodic reconstruction
+(-> 3 loại view trong hệ thống)
+
+SQL/Dùng Transaction:
+-> Undo logging: lưu data cũ, dùng commit và abort, rule
+-> Redo logging: lưu data vừa sửa, dùng end, rule
+-> <checkpoint> và <start ckpt (T1,T2)>
+Database/Transaction:
+-> ACID: 1 or tất cả, A+B=C bảo toàn, độc lập với các op khác, miễn là commit trans success
+-> Transaction states: active, partially committed, committed, fail, abort
+-> 2 loại lock và UN: LS, LX, UN
+-> 4 loại isolation level và 4 loại lỗi
+--> Read Uncommitted, Read Committed, Repeatable Read, Serializable
+--> Dirty read, Lost Update, Non-repeatable read, Phantom Read
+
+(+ Phần SQL/Other và Basic mọi cái, SQL/Database, SQL/Câu lệnh SELECT dôi)
+

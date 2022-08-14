@@ -1,0 +1,82 @@
+### SQL:
+Database 
+-> SSMS
+-> SQL
+-> SQL Server
+
+Basic
+-> Các hàm của hệ thống
+-> Aggregation function
+
+Câu lệnh database
+-> Backup database
+-> Tập tin dữ liệu khi tạo database
+
+Lệnh về table
+-> Constraints
+--> Key Constraint
+-> 3 kiểu delete table
+
+Lệnh về schema
+
+Phân quyền
+-> User và login
+-> Role
+
+Lệnh về view
+-> Indexed view
+
+Temp table
+Biến table
+
+Dùng Procedure
+Dùng Function
+Dùng Trigger
+Dùng transaction
+
+Biến 
+Type
+Loop và câu đk
+Lệnh Rule
+Lệnh Cursor
+Common Table Expression
+Lệnh Index
+
+SQL injection
+
+Câu lệnh SELECT
+-> Basic dùng SELECT
+-> Các loại JOIN
+-> Các phép logic
+-> Tư duy query lồng
+
+
+### Database:
+Basic
+
+Storage
+-> Cách lưu dữ liệu
+-> Phân mảnh bộ nhớ
+
+Đánh index
+-> Clustered index
+-> Non-clustered index
+
+Algebric expression and query processing:
+-> Equivalence transformation
+-> Query processing optimizer
+
+Transaction
+-> ACID
+-> Cơ chế lock
+--> Trạng thái commit
+-> Transaction recovery
+--> Redo logging
+--> Undo logging
+
+DB Design
+-> ERD
+-> Normalization
+--> Cách chuyển sang 3NF
+-> Functional dependency
+

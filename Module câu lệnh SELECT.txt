@@ -1,0 +1,214 @@
+Câu lệnh SELECT:
+-> Dùng SELECT * FROM sẽ chọn tất cả. Nhưng như v sẽ rất nặng nếu data nhiều, chọn các trường cụ thể sẽ giảm tải nhẹ hơn
+
+Có thể SELECT TOP 10 name FROM table
+
+Có thể đổi tên hiển thị: SELECT YEAR(order_date) order_year FROM table
+
+Tên cột có space có thể nhét trong '' -> VD: SELECT @count AS 'Count number'; 
+
+SELECT AVG(DISTINCT data) FROM ... thg dùng kiểu này để dùng aggregation function với các tham số trùng nhau
+Sử dụng DISTINCT là chậm query vì hệ thông check từng giá trị mới so với từng giá trị cũ có tồn tại lần nào chưa. 
+
+SELECT TOP 50 percent * from Company
+
+SELECTR C.* với C là alias được
+
+AS trong SELECT để hiển thị. AS trong FROM để dùng trong query.
+
+SELECT ALL luôn trả về distinct data vì mọi hàng trong table đều có distinct primary key
+
+
+
+# Basic
+SQL hỗ trợ max 32 nested query lồng liên tục
+
+Buộc khai báo alias khi dung subquery trong FROM
+
+-> ORDER BY mặc định là ASC nếu k specific
+ORDER BY Name ASC, Age ASC => nếu trùng Name thì tiếp tục order theo Age
+
+-> Dùng với WHERE: 
+= là so sánh bằng; <> or != là so sánh khác dùng cái nào cx đc
+
+--> Các từ khóa chỉ thị nhanh: 
+A IS NULL check 1 phần tử là NULL thì A là 1 giá trị
+ALL cái gì thỏa mãn tất cả cục boolean bên trong. VD: A >= B với B là 1 giá trị thì bh ta dùng A >= ALL B với B là 1 collection để đảm bảo A lớn hơn mọi thứ trong B. Tương tự có SOME, ANY trong SQL y hệt nhau
+A IN B sẽ trả boolean A có là 1 phần tử trong số collection B hay k
+(NOT) EXISTS B trả ra boolean xem collection B có ít nhất 1 record hay k
+NOT có thể dùng kiểu NOT IN, IS NOT NULL, NOT EXISTS
+LIKE thg chơi kiểu WHERE <> (NOT) LIKE <> để check trong giá trị của string có chứa pattern nào. Có thể dùng so sánh string với ký tự đại diện và từ khóa ESCAPE
+
+---> 1 vài regexp cho operator LIKE:
+"a%" bắt đầu bằng a
+"%a" kết thúc bằng a
+"%or%" chứa or ở bất cứ đâu
+"_r%" chứa r ở vị trí thứ 2
+"a_%" bắt đầu bằng a và có ít nhất 2 ký tự 
+"a%o" bắt đầu bằng a và kết thúc bằng o
+=> % >= 0 ký tự bất kỳ; _ biểu diễn chỉ 1 ký tự bất kỳ; h[oa]t tìm hot, hat tức 1 trong các ký tự trong []; h[^oa]t tìm hit và né hot hat ra tức ^ là phủ định trong []; c[a-c]t tìm tất cả cat, cbt, cct tức - là trong 1 khoảng 
+
+Để search bằng LIKE kiểu I'm thì cái dấu ' phải dùng double thì mới ra tức là 'I''m'. VD: '%''%' tức là tìm trong chuỗi xuất hiện ' thì lấy
+
+-> Dùng GROUP BY:
+Lệnh Group By sẽ gom tất cả các row trong table ta lấy mà trùng nhau sẽ thành 1 nhóm đứng cạnh nhau. Nó check trùng nhau của các trường ở trong GROUP BY. Các trường ta có thể lấy để xem trong SELECT phải là các trường chung trong GROUP BY or các trường kết hợp với 1 số hàm global của SQL.
+
+Nếu GROUP BY + WHERE là ta lọc data rồi nhóm lại lấy từng GROUP khác với GROUP BY + HAVING là group lại thành từng nhóm và dựa vào data trong từng nhóm, ta quyết định điều kiện lấy group nào.
+
+SELECT và GROUP BY phải có cùng trường và có thể thêm các aggregation function
+
+Aggregation function + Group By => ra collection. Aggregation function => chỉ ra giá trị.
+
+--> WHERE hay HAVING: 
+Khi cần thao tác điều kiện với từng phần tử -> dùng WHERE
+Khi cần thao tác điều kiện với 1 nhóm phần tử -> dùng GROUP BY HAVING -> nên nhớ điều kiện chung 1 hàm với cả nhóm chứ kp từng phần tử trong nhóm
+
+
+
+# Join:
+Mặc định SQL hiểu JOIN là INNER JOIN
+
+A left join B in ra tất cả cái mà cả A và B có cùng 1 giá trị trường và các cái A có B k có. Hay nói cách khác ta sẽ lấy được mọi thứ của bảng bên trái còn bảng bên phải chỉ lấy được những thứ trùng với bảng bên trái
+
+CROSS JOIN là tích đề các, muốn điều kiện thì vẫn dùng WHERE được. 
+Vc viết 2 bảng liên tiếp nhau FROM table1, table2 cũng là tích đề các của 2 table. VD: bảng 1 có trường A là 1,2,3 và bảng 2 có trường B là A,B,C thì bảng A,B có 2 trường AB là 1A,1B,1C,2A,2B,2C,3A,3B,3C
+
+-> Phân biệt: FULL OUTER JOIN, LEFT JOIN, RIGHT JOIN, INNER JOIN, CROSS JOIN
+Khi reference FOREIGN KEY thì giá trị của FOREIGN KEY phải tồn tại mới thêm được vào bảng refer
+VD: A -> B với B có 1,2,3,4 và A có 101 -> 2, 102 -> 2, 103 -> 3
+B LEFT JOIN A -> 1 NULL, 2 101, 2 102, 3 103, 4 NULL => miễn có data khác nhau sẽ hiện tất cả, kể cả trùng
+B RIGHT JOIN A -> 2 101, 2 102, 3 103 => nó đảm bảo các giá trị của A luôn đầy còn B k cần
+B INNER JOIN A -> các thứ khác NULL ở cả A và B
+B FULL OUTER JOIN A -> mọi thứ đảm bảo có ở cả A và B
+B CROSS JOIN A -> CROSS JOIN k cần ON và sẽ lấy tích đề các ở đây A có 3 giá trị, B có 4 giá trị nên tổng 12 giá trị
+FROM A, B -> Y hệt CROSS JOIN, người ta gọi là self join
+FROM A a, B b WHERE a.id = b.id -> Y hệt INNER JOIN
+=> Chinh vì dùng cái cuối y hệt INNER JOIN nhưng viết có vẻ dễ hình dung hơn nên người ta thường dùng cách cuối hơn là INNER JOIN 
+A NATURAL [INNER, LEFT, RIGHT] JOIN B -> k có ON nx. Nó tự liên kết thông qua các cột có tên giống nhau nên họ khuyên k nên đặt tên giống nhau cho 2 cột mà giữa chúng k có liên kết dữ liệu. Tương tự JOIN bth nhưng ON vào mọi trường trùng nhau. NATURAL JOIN k có trong SQL Server mà trong PostgreSQL
+
+NATURAL JOIN nó như Inner Join nhưng tự động, chú ý nếu data k có thì nó bỏ đi nên số lượng thu được là <= min(số phần tử bảng 1, số phần tử bảng 2)
+=> nó join nếu cột có nhiều hàng trùng sẽ lấy từng hàng trùng bên này với từng hàng trùng bên kia 
+
+
+
+# Logic:
+2 table muốn UNION với nhau thì phải cùng số cột, ta nên dùng SELECT gì đó 2 cái để cho cùng cột
+A Union B sẽ ra hợp của A và B với các trường định sẵn và nếu bị trùng nhiều cái trong 1 or cả 2 table sẽ bị rút gọn chỉ còn 1. VD: 1345 UNION với 24456 sẽ thành 123456
+
+Dùng Union thì cột 1 của bảng 1 sẽ hợp với cột 1 của bảng 2 ra cột 1 của bảng gốc lấy tiêu đề là cột của bảng 1
+Tương tự có UNION ALL, INTERSECT, MINUS cx chỉ là các phép logic như bth
+
+-> TK:
+A UNION B -> điều kiện khắt khe là 2 bảng cùng số cột sẽ tìm hợp của 2 bảng dựa trên các cột đó, trùng nhau coi là 1
+A UNION ALL B -> tương tự nhưng trùng nhau vẫn tách rời
+A INTERSECT B và A EXCEPT B -> tự hiểu
+
+-> Phân biệt UNION và JOIN và UNION ALL:
+JOIN cho phép kết nối dữ liệu giữa các bảng khác nhau, nếu các trường của các bảng khác tên nhau cũng JOIN được và có nhiều loại JOIN. TH thường dùng như đã biết thì nó là bảng A thì mỗi record có idB, bảng B cũng có idB và là primary key thì ta có thể check a có những thuộc tính nào của bảng B dựa vào cột idB chung.
+UNION hợp dữ liệu 2 bảng mà có các cột data giống nhau(y hệt). VD bảng nhân viên của công ty A có 5 trường, bảng nhân viên công ty B có 5 trường thì ta UNION thành bảng nhân viên công ty A hợp B có 5 trường, trùng nhau coi là 1.
+UNION ALL giống UNION nhưng bản ghi trùng in ra hết chứ k coi là 1
+
+
+
+# Tư duy SQL query nhanh: chỉ chơi với nested
+-> Câu lệnh đầu tiên là câu lệnh quan trọng, dễ và là khởi nguồn. VD ta cần retrieve 10 trường từ 3 bảng khác nhau thì câu lệnh đầu 100% là SELECT 10 trường FROM 3 bảng JOIN với nhau còn JOIN thế nào tùy bài toán nhưng chắc chắn phải làm như v. Còn TH retrieve trường trong 1 bảng có thể select từ bảng đó or select từ bảng đó JOIN với các bảng khác. Tư duy đầu tiên lúc nào cũng là như v và JOIN bảng nào lại với nhau trc.
+
+-> Tư duy tách nhỏ cần phải chú ý pb 2 thứ là table và bản ghi element:
+VD: bảng order có các bản ghi chứa thông tin customer, in thông tin đơn hàng của customer mà có từng có đơn hàng vào năm 2017 
+-> Tư duy đúng list và ele: Đi từ select from order where là đang xét từng bản ghi trong order giả sử đang ở 1 bản ghi customer a. Cần lấy tất cả bản ghi chứa element a và check điều kiện thì ez rồi. Thì để lấy bản ghi chứa element a thì chỉ cần SELECT FROM order WHERE id = a.id là ra 1 list các order của customer a, lấy order năm 2017 xem có k là được
+
+-> Tư duy phức tạp:
+1) Khi dùng PP tách, đầu tiên ta tìm ra đối tượng a cần lấy -> liệt kê các điều kiện mà a cần thỏa mãn -> mỗi điều kiện ta SELECT ra 1 list các thứ thỏa mãn điều kiện -> check WHERE của a có IN hay cần NOT IN cái cục điều kiện ấy k
+2) Cách 2 là đầu tiên tìm đối tượng a cần lấy -> Lấy từng cục SELECT lồng nhau chứa đối tượng a -> check xem cái chứa đối tượng a đó có thỏa mãn điều kiện cần tìm k
+=> Cách 1 thg đơn giản hơn hay dùng. Cách 2 đôi khi dùng phức tạp nhưng nhiều lúc là bắt buộc
+VD C1: SELECT FROM WHERE a IN (list) AND NOT IN (list) -> 2 cái list là điều kiện 1 và 2
+VD C2: SELECT FROM a WHERE (SELECT FROM b WHERE B.id = A.id + condition lồng)  
+=> Tuân theo đúng 3 bước đó là ra hết
+
+-> Ta thường tư duy kiểu lấy từng record của bảng và với 1 record nhất định ta xử lý SELECT lồng liên tục trong WHERE mà dùng đến record đó. Để cái nested query đó tạo điều kiện phức tạp.
+VD: SELECT * FROM b WHERE <condition> -> thì cái condition có thể lồng rất nhiều con và sibling dùng đến b VD như SELECT * FROM c WHERE c.id = b.id -> kiểu for(int i) duyệt mọi phần tử của mảng c và làm gì tiếp với c[i] v
+
+-> Tư duy tìm A thỏa mãn điều kiện gì đó ở bảng B: 
+C1: Tìm list a trong bảng B mà thỏa mãn điều kiện -> tìm xem a trong A thuộc list đó k
+C2: Tìm tất cả a trong A và check từng phần tử xem thỏa mãn điều kiện trong B không
+=> nghĩ cách 2 nó xuôi hơn. Tùy vc điều kiện đó là gì mà tìm trong A or tìm trong B sẽ dễ hơn
+
+-> Các VD tư duy
+VD0: 1 bảng lecturer lưu thông tin giảng viên
+1 bảng lecture lưu thông tin môn nào được giảng viên nào dạy
+=> SELECT * FROM LECTURE as L1, LECTURE2 as L2 WHERE L1.StaffNO = L2.StaffNO
+=> SELECT * FROM LECTURER JOIN LECTURE ON LECTURER.StaffNO = LECTURE.StaffNO
+Nếu muốn in thông tin giảng viên kèm lecture dạy thì nên dùng LEFT JOIN với cách 2 bắt buộc để gv k dạy môn nào cx được in ra 
+
+=> 3 lối tư duy cơ bản nên nghĩ tới đầu tiên khi gặp mọi dạng bài là cứ JOIN nó lại nếu nhiều bảng, GROUP BY nếu từng nhóm, query lồng nếu phức tạp
+
+VD1: Khi nhiều bảng nối với nhau kèm điều kiện:
+C1: SELECT COUNT(No_OfCopies) 
+FROM BOOK_COPIES a, BOOK b, LIBRARY_BRANCH c
+WHERE a.BookId = b.BookId AND a.BranchId = c.BranchId AND b.Title = 'The Lost Tribe' AND c.BranchName = 'Sharpstown'
+C2: SELECT COUNT(No_Of_Copies)
+FROM BOOK_COPIES
+WHERE (
+	BookId IN (SELECT BookId FROM BOOK WHERE Title = 'The Lost Tribe')
+	AND
+	BranchId IN (SELECT BranchId FROM LIBRARY_BRANCH WHERE BranchName = 'Sharpstown')
+)
+=> 2 cách đều hay nhưng cách 1 nhanh hơn. Còn cách INNER JOIN thay thế tích đề các sẽ tư duy hay hơn nx. C1 kiểu tư duy chung, C2 kiểu tư duy nested query tốt hơn.
+
+VD2: để lấy thông tin sinh viên có project được làm ở Houston
+SELECT FNAME, LNAME, ADDRESS 
+FROM EMPLOYEE e
+WHERE SSN IN (SELECT ESSN FROM WORKS_ON wo, PROJECT p WHERE wo.PNO = p.PNUMBER AND PLOCATION = 'Houston')
+=> Có 2 cách là với mỗi sinh viên, lấy tất cả các sinh viên làm việc ở Houston và check xem sv hiện tại có trong đó k; cách 2 là lấy tất cả các project mà sinh viên này làm và check xem có project nào ở Houston k
+
+VD3: Hướng nghĩ: Đầu tiên xác định đề bài cần lấy cái gì -> gom các bảng cần lấy vào và thêm điều kiện -> SELECT cái cần lấy ra
+Ta phải tư duy theo 1 hướng tách từng phần bảng: VD TH many to many
+A <- (a, C, b) -> B và ta cần lấy A trong C sao cho nó có tất cả B.
+Thông thường ta sẽ GROUP BY từng nhóm A trong C và với mỗi nhóm ta lấy ra tất cả các B, sau đó check từng B trong B nếu thuộc nhóm đó thì lấy cái a nhóm đó. Nhưng GROUP BY nó k cho thao tác với từng nhóm bên trong như bth mà chỉ có thể chơi điều kiện gì thôi. Nested query cho ta tùy biến rất nhiều, cô lập 1 record, cô lập 1 table thoải mái.
+Ta buộc phải tư duy theo hướng tách từng bảng. VD SQL hỗ trợ query lồng nên ta có thể tùy biến lấy ra thứ ta muốn. Đầu tiên cần lấy các A nên có: SELECT a FROM nhưng FROM cái gì là cả vấn đề.
+Ta cần FROM cái C nhưng với điều kiện là khi ta lấy a từ cái C đó thì được 1 list các b ứng với từng a và lấy từ bảng B ra từng phần tử để check. Đầu tiên ta cô lập SELECT * FROM C c WHERE c.a = a ngoài. Xong lại nó RIGHT JOIN B -> sẽ được 1 bảng mà có tất cả các thứ của B và C chỉ có a trùng với a cần lấy bên ngoài -> Trong bảng này, các giá trị của B mà là NULL tức là có B mà k chứa hêt. Nếu điều này tồn tại thì k lấy a, ngược lại thì lấy A, tức là lại SELECT phần tử NULL xem exist k
+=> Ta nên hiểu rằng có thể lấy bất cứ thứ gì và làm bất cứ thứ gì với SQL đặc biệt là query lồng. Khi đó ta nên lấy từng bước SELECT từ từ cho đến khi có được mục đích cái ta cần
+Ta nên cô lập ra 1 bảng tạm, lấy các dữ liệu cần thiết như bên trên. Sau đó xử lý từ từ chứ đừng ốp 1 phát bảng lớn yêu cầu có gì ngay thì bốc cức. Cứ từ từ lấy ra và bôi đen chạy từng cái 1 vẫn hơn
+
+VD4: các giá trị a trong B sao cho trong C record nào cũng có a
+Nếu làm nested: Lấy mọi a trong B và gộp nó với C xong tìm tất cả giá trị nó trong C sao cho a k tồn tại. Do ta chỉ lấy khi tất cả tồn tại nên NOT EXIST nó để xác nhận tất cả tồn tại. Nếu NOT EXIST giá trị a mà C k có thì đó là giá trị a đúng trong B cần lấy
+Nếu làm bth: so sánh COUNT đếm các giá trị a trong B và các giá trị a trong C, 2 số lượng này phải bằng nhau(Ý là B chứa bnh a thì C chứa bấy nhiêu a vì nếu C chứa nhiều hơn a lấy từ b tức là có cái c mà a k thuộc về, k có tất cả tức lỗi) -> hiểu sai mẹ đề
+
+VD5: 
+SELECT FROM a LEFTJOIN b ON Condition WHERE C
+SELECT FROM a LEFTJOIN b ON Condition AND C
+C1: lấy mọi phần tử của a -> ghép với mọi phần tử của B thỏa mãn theo Condition và nếu k thỏa mã thì các trường b đó sẽ là null -> lọc trên bảng đó điều kiện C. 
+C2: lấy toàn bộ phần tử của a -> ghép với các phần tử của b nếu thỏa mãn Condition và C, k có thì lấy null
+Example: a có 1X 2Y 3Z, b có Xa Yb Kc trường chữ hoa là name
+=> SELECT FROM a LEFTJOIN b ON a.name = b.name WHERE name = Y  -> cho ra 2Yb
+=> SELECT FROM a LEFTJOIN b ON a.name = b.name AND name = Y  -> cho ra 1Xnull, 2Yb, 3Znull
+Nên nhớ dùng LEFTJOIN cuối cùng sẽ luôn chứa mọi phần tử bảng trái bất chấp điều kiện ON, dùng WHERE cuối cùng sẽ lọc và loại bỏ giá trị 
+
+VD6: 
+SELECT a FROM b WHERE c GROUP BY a HAVING d
+Dùng SELECT DISTINCT a FROM b
+C1: Vc dùng WHERE để lọc cụm data từ đầu trước, r sau đó ta mới GROUP BY cái cục đã lọc thỏa mãn điều kiện HAVING gì ở mỗi nhóm, HAVING chỉ dùng được các hàm global xử lý trong 1 nhóm đó.
+C2: Với C2 thì trong bảng b có nhiều giá trị trường a trùng nhau thì ta chỉ lấy 1 lần các giá trị đó. Nhưng ta k thể thao tác các thuộc tính global với từng nhóm VD lấy COUNT các phần tử trong từng nhóm hay thỏa mãn mỗi nhóm có HAVING AVG(age) lớn hơn 5 mà chỉ thao tác được với từng trường a. Do đó C1 là phiên bản mở rộng hơn của C2 khi mà dùng thêm được hàm global thao tác với từng nhóm. Nhưng cách 2 có thể tùy biến mọi thứ nếu ta dùng thêm nested query vào đó
+
+VD7: 
+a NOT IN (table) là giá trị của element a k tồn tại trong cái table
+NOT EXISTS (table) là list k có giá trị nào
+a IS NULL là giá trị của a là null
+=> phân biệt table là 1 cục SELECT ra list còn a nó là từng giá trị 1 trong bảng. Nên phân biệt TH 2 và 3 khi dùng thực tế
+Ngoài ra còn có: a >= ALL (list) hay a >= b; EXISTS thì table phải có ít nhất 1 bản ghi
+TH1 và TH2 có thể giống nhau trong vài TH VD a IN (table) và EXIST (list a in TABLE)
+
+VD8: 
+NhanVien(MaNV, DiaChi, MaPh)
+Phong(MaPh, DiaChi)
+Tìm mọi mã của phòng mà k có nhân viên nào có địa chỉ ở HN
+=> Nếu lấy mã phòng của các phòng r lại nested check mọi nhân viên của phòng đó sống ở HN là NULL thì nó rườm ra. Ta nên check trước ĐK ngược từ đầu xem có được k bằng cách: Lấy mã của phòng và mã phòng đó NOT IN tập mã phòng mà có sinh viên sống ở HN
+SELECT MaPh FROM Phong WHERE MaPh NOT IN (SELECT MaPh FROM NhanVien WHERE DiaChi = 'Ha Noi')
+
+
+
+# Other:
+1 số lệnh SQL Server k có nhưng lại có ở vài CSDL khác: NATURAL, MID, STDDEV_POP, EXCEPT và INTERSECT kết hợp với ALL, MATERIALIZED VIEW, REFRESH, USAGE, OFFSET, LIMIT, IDENTIFIED BY
+
+Nested query k tốt vì càng lồng vào thì hệ thống càng phải query nhiều. Hệ thống có hàng triệu record chẳng hạn thì vc dùng nested query thậm chí k khả thi -> ưu tiên dùng query bth. 
+

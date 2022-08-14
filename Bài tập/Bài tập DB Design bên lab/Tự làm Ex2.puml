@@ -1,0 +1,66 @@
+@startuml
+
+' Sai ở chỗ đề bài k nói rõ Captain là 1 thành viên có sẵn trong ClubPlayer. Ngoài ra về quan hệ số lượng 
+' tự làm vẫn đúng hơn. 
+
+entity Match {
+    * MatchID INT NOT NULL
+    * MatchNumber INT NOT NULL
+    * NumberOfGoals INT NOT NULL
+    * Pitch VARCHAR(10) NOT NULL
+    * Pitch VARCHAR(10) NOT NULL
+    * Opponent VARCHAR(50) NOT NULL
+    * DateAndTime DATETIME NOT NULL
+}
+entity ClubPlayer {
+    * PlayerID INT NOT NULL
+    * Award VARCHAR(50) NOT NULL
+    * ShirtNumber INT NOT NULL
+    * PlayerName VARCHAR(20) NOT NULL
+    * DateOfBirth DATE NOT NULL
+}
+entity MatchBelongToLeague{
+    * LeagueID INT NOT NULL
+    * MatchID INT NOT NULL
+}
+entity League{
+    * LeagueID INT NOT NULL
+    * TournamentName VARCHAR(50) NOT NULL
+    * Year INT NOT NULL
+    * Code VARCHAR(20) NOT NULL
+    * DetailedDescription VARCHAR(1000) NOT NULL
+}
+entity Support {
+    * LeagueID INT NOT NULL
+    * SponsorID INT NOT NULL
+}
+entity MatchHasCaptain{
+    * CapID INT NOT NULL
+    * MatchID INT NOT NULL
+}
+entity Sponsor{
+    * SponsorID INT NOT NULL
+    * Address VARCHAR(50) NOT NULL
+    * Name VARCHAR(50) NOT NULL
+}
+entity Participate {
+    * PlayerID INT NOT NULL
+    * MatchID INT NOT NULL
+    * Position VARCHAR(50) NOT NULL
+    * NumberOfYellowCards INT NOT NULL    
+    * NumberOfRedCards INT NOT NULL    
+}
+entity Captain {
+    * CapID INT NOT NULL
+}
+
+MatchBelongToLeague }o..|| League
+League ||..o{ Support
+Sponsor ||..o{ Support
+ClubPlayer ||..o{ Participate
+Participate }o..|| Match
+Captain ||..o{ MatchHasCaptain
+Match ||..|| MatchHasCaptain
+Match ||..|| MatchBelongToLeague
+
+@enduml

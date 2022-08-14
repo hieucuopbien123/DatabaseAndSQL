@@ -1,0 +1,423 @@
+Database và SQL: Mọi dữ liệu mặc định là SQL Server với SSMS
+-> Master database là primary configuration database trong SQL server. Nó chứa thông tin của mọi databases tồn tại trong server chứa physical database file và vị trí của chúng. Nó cũng chứa cả SQL Server's configuration setting và login account info.
+
+-> SSMS F5 chạy thì query nếu fail ở 1 dòng mà k ảnh hưởng thì nó chạy đến đâu thực hiện đến đấy, ở đây k có biên dịch như các lang bth
+
+
+
+# Basic:
+-> Giá trị đặc biệt:
+Chú ý NULL + data = NULL nên nếu khai báo biến mà kiểu cộng lên thì phải khởi tạo giá trị ban đầu của nó khác null tránh lỗi
+
+SS với NULL sẽ ra UNKNOWN. UNKNOWN là 1 loại giá trị giống TRUE và FALSE nhưng chả bh được dùng. Các phép logic với UNKNOW tuân theo như bth. VD: UNKNOWN AND FALSE là false, UNKNOWN AND TRUE là UNKNOWN, NOT UKNOWN là UNKNOWN, UNKNOWN OR TRUE là TRUE -> nó kiểu giá trị trung gian của TRUE FALSE là 1/2 v.
+
+-> Các câu lệnh, procedure có sẵn về hệ thống:
+SELECT @@version;
+@@ROWCOUNT là 1 biến toàn cục trả ra số lượng record bị ảnh hưởng bởi 1 câu lệnh vừa mới gọi xong. Nếu k có câu lệnh nào được gọi trước đó, nó trả ra 1
+sp_rename 
+sp_helptext xem chức năng của lệnh
+
+-> Các câu lệnh cơ bản:
+GO: sẽ đóng scope cũ. Khai báo biến -> GO -> K dùng được biến đó nx vì sau GO sẽ sang 1 scope mới là 1 khối block mới
+PRINT: hàm PRINT sẽ in ra ở tab Messages chứ k hiện dạng bảng, nó tự xuống dòng khi in xong content, PRINT k dùng được trong function
+GETDATE: trả ra thời gian lệnh này được goi
+ROW_NUMBER OVER ORDER BY: khi dùng trong SELECT sẽ sinh trường mới đánh index từ 1 theo chiều tăng hay giảm dần của trường gì, nếu bên ngoài SELECT cũng dùng ORDER BY thì nó vẫn hiển thị theo thứ tự bên ngoài k ảnh hưởng, cái này chỉ giúp đánh số 1 trường nx => thg dùng kèm với PARTITION BY
+
+Hàng đống lệnh aggregation thg dùng khác: YEAR, COUNT, AVG, SUM, LEN
+2 lệnh đặc biệt là LAG và LEAD
+
+CHAR(10) là line feed, char(9) là tab
+
+Lệnh COUNT sẽ k đếm tính giá trị NULL, nhưng trùng nhau vẫn tính riêng
+
+
+
+# Câu lệnh Database
+Database có thể tạo bằng query hoặc giao diện của SSMS
+
+-> Tập tin dữ liệu (Data-file): gồm 1 tập tin lưu trữ dữ liệu chính (*.mdf) là main chứa các dữ liệu khởi đầu và các tập tin dữ liệu thứ cấp (*.ndf) chứa dữ liệu phát sinh hoặc không lưu hết trong tập tin lưu trữ chính.
+Tập tin nhật ký thao tác (*.ldf) là log chứa thông tin giao tác, thường dùng để khôi phục Database nếu xảy ra sự cố. 
+
+Khi tạo ra 1 database sẽ tạo ra 2 file .mdf và .ldf còn tập ndf thứ cấp ta k cần quan tâm thì thông thường nó sẽ tự tạo 2 tập tin này cho ta nhưng điều này ta có thể custom được
+
+-> Backup database: 
+Backup database full còn WITH DIFFERENTIAL sẽ backup database khác gì so với lần fullbackup gần nhất. Tức là differential backup chỉ lưu bảng mới khác gì so với bản full từng lưu để tăng tốc độ lưu như github ấy. Ta có thể rightclick database -> tasks -> Backup
+Để backup 1 differential thì phải kèm với 1 fullbackup gần nhất với nó, đã từng full backup r. Mỗi khi backup nó sẽ lưu 1 bản copy của full database tại thời điểm đó vào 1 file nào
+
+
+
+# Câu lệnh Table
+Tạo DATABASE trước r mới tạo table trong database
+
+-> Có thể CRUD, sửa identity_insert, vô hiệu constraint
+
+Ta có thể update tăng kích thước thoải mái nhưng nếu giảm kích thước phải đảm bảo số lượng giá trị hiện tại chưa quá kích thước
+TH đổi từ NULL sang NOT NULL thì phải cập nhập tất cả các dòng sao cho nó từ NULL thành rỗng trước khi thay đổi
+
+2 lưu ý: column có default thì k thể xóa riêng column đó được vì có cái éo gì internal access tới nó ấy; mỗi table phải có ít nhất 1 column
+
+Có thể delete 10 row đầu kiểu: DELETE TOP(10) FROM table
+
+-> Constraints thường dùng:
+--> Pb: Khi dùng PRIMARY KEY và UNIQUE thì SQL tự tạo ra 1 index unique mỗi khi update và insert. PRIMARY KEY k chấp nhận giá trị NULL nhưng UNIQUE được có NULL và 2 giá trị cùng NULL vẫn lỗi duplicate value. 
+=> Nên nhớ các điều kiện constraint có thể thêm trực tiếp trong từng trường, thêm ở cuối CREATE TABLE or thêm bằng ALTER TABLE và các CONSTRAINT có thể xóa tùy ý thông qua tên constraint. Do đó người ta sẽ đặt tên cho CONSTRAINT để dễ dàng quản lý
+
+Constraint CHECK có thể theo hẳn 1 câu lệnh SQL mới
+
+ALTER TABLE Person ADD CONSTRAINT city_con DEFAULT "Sand" FOR City => thêm constraint thuộc tính default cho 1 trường của table
+
+A có khóa ngoại đến primary key của B. Nếu muốn thêm data vào A thì khi thêm giá trị trường FOREIGN KEY của A, ta phải đảm bảo B có giá trị PRIMARY KEY đó rồi. Tương tự, bảng A có 1 foreign key refer đến primary key của bảng B => k thể xóa bảng B được nếu muốn sẽ phải xóa bảng A trước. Tương tự k thể xóa 1 schema khi đang có bảng dùng nó
+Khóa chính thường chỉ nên 1 column, k được null và là duy nhất, nếu là kiểu số nguyên thì nên thiết lập tự động tăng IDENTITY để tối ưu database
+Khi dùng primary key, ta k cần dùng NOT NULL cho trường đó, dù ta có dùng hay k, khi bảng được tạo thì trường primary key sẽ luôn tự động là NOT NULL
+
+3 loại constrains:
+1) Key constraints: set of attribute unique value, k null
+Super key: là set attributes là unique trong relation
+Candidate key(Minimal key): là super key nhưng k bị redundant là k thể reduce các trường đi mà vẫn giữ nguyên thuộc tính unique được nx. 
+Primary key: là candidate key được chọn 1 cái bởi hệ thống, trường được gạch chân khi biểu diễn, nếu ta k xác định thì DBMS tự xác định cho ta. 
+Alternate key: là candidate key k được chọn là primary key
+Foreign key: là key của 1 bảng mà refer đến candidate key của bảng khác
+2) Domain constraints: ....
+Giá trị NULL khác 0 và khác ' '
+3) Referential Integrity Constraints: 
+Nếu 1 table có foreign key refer tới 1 key atts of relation nào thì cái key đó phải tồn tại => chính là constraints mặc định ảnh hưởng tới thứ tự xóa khi bảng có qh.
+
+--> Các options: NULL, NOT NULL, PRIMARY KEY, DEFAULT "value", UNIQUE,  FOREIGN KEY REFERENCES table_name(column_name)
+
+---> IDENTITY(initialVal, incrementalVal) nếu k chỉ định 2 giá trị đó thì nó sẽ là IDENTITY(1,1) sẽ tự tăng như nào. Nó luôn tự tăng mãi mãi dù add thất bại hay xóa nhưng ID cũ nó sẽ k bù lại vào đâu
+
+---> Sau khi thêm khóa ngoại, ta có 2 hành động chính tác động đến khóa ngoại là delete và update. Ta có thể định nghĩa cách sử dụng khóa ngoại ở 1 bảng:
+FOREIGN KEY (id1) REFERENCES table2(id2) on UPDATE action ON DELETE action;
+=> Các action là NO ACTION, CASCADE, SET NULL và SET DEFAULT.
+VD: Con có foreignkey refer đến primary key bảng cha: NO ACTION sẽ trả về lỗi và dữ liệu bảng cha được khôi phục; CASCADE thì dữ liệu bản con được cập nhập tương ứng với bảng cha; SET NULL thì cập nhập bảng con thành NULL, để dùng được thì column foreign key của con phải cho phép NULL; SET DEFAULT thì SQL Server sẽ về giá trị mặc định, để dùng được thì foreign key phải có giá trị default khi khởi tạo. Mặc định sẽ dùng NO ACTION.
+
+----> Dùng ON UPDATE CASCADE và ON DELETE CASCADE: A có foreign key trỏ tới primary key của B thì A chỉ được tạo khi primary key đó của B tồn tại. Khi xóa thì phải xóa A trước còn cái có primary key phải xóa sau. Khi xóa B mà xóa cả A thì thêm CASCADE vào constraints foreign key-primary key ở A
+
+-> Phân biệt TRUNCATE và DELETE FROM <tên bảng> là TH xóa cả table và DROP table:
+--> DELETE: xóa mọi record or xóa vài record thỏa mãn điều kiện. Khi xóa cả bảng, nó sẽ chậm hơn TRUNCATE khi SQL Server phải duyệt qua từng record. Có thể khôi phục lại bằng ROLLBACK command. IDENTITY sẽ tiếp tục tăng. DELETE sẽ lock row khi xóa từng dòng.
+--> TRUNCATE sẽ sắp xếp lại trạng thái và xóa file lịch sử transaction của bảng, giải phóng bộ nhớ cho bảng nên tốc độ nhanh hơn, reset identity của bảng về 0, khi xóa chắc chắn k thể khôi phục nên khá nguy hiểm, k thể dùng ROLLBACK để khôi phục trong mọi case. Nó sử dụng table lock khi thực hiện.
+--> DROP: khi các cái trước xóa row thì cái này xóa cả bảng, muốn dùng bảng buộc phải CREATE TABLE lại. K thể khôi phục bằng ROLLBACK vì nó cũng auto commit. xóa cả named element của schema. Nó xóa cả cấu trúc bảng nên mạnh hơn TRUNCATE còn TRUNCATE dùng tiếp được cấu trúc bảng, 2 kiểu này đều k thể hoàn tác.
+
+
+
+# Câu lệnh Schema
+Tạo schema buộc phải có go ngay sau trước khi nó sử dụng, cũng giống như tạo r dùng database hay table
+
+Schema là 1 namespace để gom các table chung 1 đặc điểm nào đó để dễ quản lý, nếu ta k sử dụng schema thì sẽ lấy schema mặc định là dbo. Trong 1 database thì tên của schema là duy nhất được chỉ định với cú pháp đầy đủ là server.database.scheme.object => Nhờ v mà ta có thể phân quyền quản lý schema cho từng user khác nhau
+
+
+
+# Phân quyền
+-> Trao/thu quyền cho login thao tác với schema, bảng
+Các quyền SELECT, INSERT, DELETE, UPDATE, REFERENCES(quyền refer to bảng đó khi dùng trong constraints), USAGE(quyền dùng element đó trong declaration của họ), TRIGGER(quyền được tạo trigger trên relation đó), EXECUTE(quyền thực hiện 1 phần code như function, procedure), UNDER(quyền tạo subtype của type cho trước).
+
+-> User và login
+Tạo user mới: user name là tên database user muốn tạo và tên login đến SQL Server. Để tạo user phải chắc chắn đã tạo 1 login trước đó r. 1 Login chỉ ánh xạ đến 1 user trong mỗi database của server nhưng 1 login có thể ánh xạ đến nhiều tên user khác nhau cho mỗi cơ sở dữ liệu. Tức 1 user - 1 Login trong 1 database. Chú ý đang dùng database nào
+=> Trước h ta hiểu sai login là user, user phải là trong tưng database là khác nhau nhưng cả server thì chung 1 login có mk khi đăng nhập vào
+
+-> Role là tập hợp các đặc quyền giúp vc cấp quyền ez hơn
+
+
+
+# Câu lệnh view
+View trong SQL cho ta lưu trữ câu lệnh SQL để lấy ra dùng lúc nào cũng được. Nó cũng là 1 table nhưng ta chỉ có thể đọc chứ k thể update, delete, insert(thật ra là có)
+Nhờ view có thể hạn chế người dùng truy cập vào table, họ truy cập thông qua view sẽ an toàn hơn vì người dùng k thể xem lệnh là gì và k thê dổi dữ liệu. Nó giúp tái sử dụng, vì view thì sửa 1 phát các câu lệnh khác sẽ xong luôn chứ kp sửa lỗi đó ở từng file
+
+View trong SQL có thể update nhưng điều kiện phức tạp với các view đơn giản xem trong slide
+
+-> Có thể thêm xóa, update làm mọi thứ với view như 1 bảng mới luôn, VD khi thêm row vào view test gắn với bảng test1 thì bảng test1 sẽ bị ảnh hưởng. Các trường của bảng mà view k có sẽ thành NULL. Chú ý thêm phải đúng cú pháp và VD nếu bảng đó quan hệ với nhiều bảng khác thì vc thêm vào có thể lỗi. VD A quan hệ với B, mà view C lấy A, xong add vào view C thuộc tính từ A nhưng 1 thuộc tính k có trong view nên ta gán nó là NULL nhưng thuộc tính đó lại là cái tạo quan hệ A và B k thể là NULL nên lỗi, update qua view rất rối k nên dùng. Phức tạp hơn khi mà view nó kết hợp nhiều bảng rất dễ lỗi nên người ta khuyên view chỉ read thôi
+
+ALTER VIEW có thể modify view nhưng với indexed view thì nó sẽ xóa hết index trên view unconditionally
+
+-> View nó như 1 bảng ảo, lấy dữ liệu từ nh bảng khác và dùng cục đó như 1 bảng tiếp, tái sử dụng khi có logic phức tạp. Do nó có tham chiếu đến bảng thật nên thay đổi bảng thật hay đổi view thì tất cả cùng được thay đổi theo hết.
+Có nhiều loại view do hệ thống tự tạo ra sẵn:
+--> indexed view: dữ liệu tồn tại thật trên bộ nhớ vật lý, như bảng thật. Nó cải tiến hiệu suất của query(nếu dùng hợp lý) vì query trực tiếp trên bảng thật này còn view bth thì k có lợi về hiệu suất khi mà viết logic phức tạp cho nó thì nó đều thực hiện lại logic đó khi dùng. 
+--> partitioned view: VD có nhiều database server và dữ liệu phân mảnh từ nhiều server được kết hợp thành 1 table. Nếu nó join member table trong cùng 1 instance SQL server thì gọi là local partitioned view.
+--> system view: view có sẵn sinh ra bởi system. Nó thg cung metadata cho database mà ta muốn xem lúc nào cx được. VD: SELECT * FROM INFORMATION_SCHEMA.TABLES => xem các view của 1 database được
+Ta hoàn toàn k dùng view mà vẫn query được bth VD SELECT FROM View thì ta thế View bằng nội dung query của nó, chỉ có điều trong FROM phải là 1 biến chứ kp 1 câu lệnh nên thêm AS vào sau là được. SQL thực hiện câu lệnh có view cơ chế tương tự bằng cách thế vào.
+
+---> Để tạo indexed view: 
+-> tạo view bình thường với WITH SCHEMABINDING option. option này sẽ bind view vào schema của table gốc(underlying table). Nếu đổi cấu trúc của table gốc thì phải drop indexed view trước r mới thay đổi được.
+-> CREATE UNIQUE CLUSTERED INDEX vào trường nào của cái view đó. Tức là tạo view và đánh index cho view là xong ấy mà. 
+SET STATISTICS IO ON sẽ giúp xem được chi tiết tốc độ câu query, mà chả cần vì trong SSMS có nút display estimated execution plan giúp xem hiệu suất. Tương tự có thể tạo NONCLUSTERED INDEX cho 1 trường nào của view
+
+-> 2 loại view:
+-> Virtual view(mặc định): chỉ là query thuần, update được bth khi thỏa mãn các điều kiện của DB; Có thể update virtual view bằng trigger thoải mái.
+-> Marterizalized view: thực sự là bảng và được stored. Access được nhanh trực tiếp nhưng mỗi lần table đổi thì nó cx cần đổi, để làm điều đó có có 2 cách:
+--> periodic reconstruction(REFRESH)
+--> dùng trigger
+
+
+
+# Temp Table
+Temporary Table là table đặc biệt lưu tạm thời trên SQL Server. Ta dùng nó để lưu 1 câu SELECT nào đó nhiều lần được. Nó có đầy đủ tính năng của table và có 2 loại: Local Temporary Table và Global Temporary Table. Local Temp Table chỉ tồn tại trong 1 phiên làm việc còn Global Temp Table có thể sử dụng trên nhiều phiên làm việc. Phiên làm việc hay session là ktg giữa khi ta kết nối vào CSDL và ngắt kết nối
+
+Quy ước là temporary table tên phải bắt đầu bằng #, local 1 dấu #, global là ##
+Có thể tạo bằng SELECT INTO hoặc tạo như bảng bình thường với #
+
+Khi đã có temp table, vào System Database -> tempdb -> Temporary Tables sẽ hiện ra table này và đằng sau có hàng loạt ký tự SQL tự thêm vào để tránh TH trùng tên vì tất cả temp đều được lưu trữ ở đây. Đổi dữ liệu bảng gốc sẽ k ảnh hưởng đến bảng tạm.
+
+
+
+# Biến table
+Biến Table có chức năng gần giống như Temporary Table nhưng sẽ bị xóa khi out of scope. K thể sử dụng ALTER TABLE để đổi cấu trúc của mảng. Chỉ phù hợp với dữ liệu nhỏ vì càng lớn càng chậm. K nên sử dụng làm tham số hay output của procedure nhưng có thể return trong function, k thể tạo chỉ mục trên bảng tạm. 
+Sử dụng biến table trong procedure giúp chương trình hoạt động tốt hơn bởi SQL Server sẽ ít phải biên dịch hơn so với sử dụng bảng tạm. Biến table dùng ít tài nguyên hơn. Biến table sống trong tempdb như bảng tạm chứ kp trong bộ nhớ
+
+Biến table k có statistics nên k giúp query optimizer xử lý nên nó thg chỉ dùng store vài records. Nó chiếm ít bộ nhớ hơn như locking, logging và exec trong tempdb, kp trong memory. 
+
+Dùng table variable với JOIN buộc có alias.
+
+-> Có 2 cách tạo biến table:
+DECLARE <biến> TABLE(...)
+INSERT INTO <biến> SELECT ...
+
+-> Insert into có 2 cách dùng:
+INSERT INTO Table1(id1, name) OUTPUT inserted.name VALUES(1)
+INSERT INTO <biến> SELECT ...
+
+-> Tạo table:
+VD: 
+CREATE FUNCTION x 
+RETURN TABLE
+AS ... 
+
+VD: đặt tên
+CREATE FUNCTION x 
+RETURN @part TABLE
+AS ...dùng @part trong câu lệnh, lúc return chỉ cần ghi trống là RETURN, chứ k cần RETURN @part
+
+VD: định nghĩa rõ
+CREATE FUNCTION x()
+  RETURNS @contacts TABLE (
+    first_name VARCHAR(50)
+  )
+AS ...
+=> Table function giống như view v.
+=> Ta k thể drop function nếu nó referenced đến view or function khác với WITH SCHEMABINDING
+=> Nếu có các loại constraints CHECK, DEFAULT, column ngoài liên quan tới function. 
+VD: tạo function x với WITH SCHEMABINDING => tạo view y bên trong execute x => xóa function sẽ lỗi => muốn xóa function phải xóa view trước. WITH SCHEMABINDING làm cho nó dính chặt như v.
+
+=> có thể xóa multi functions:
+DROP FUNCTION [IF EXISTS] 
+schema_name.function_name1,
+schema_name.function_name2 
+
+
+
+# Câu lệnh procedure
+Stored procedure là tập hợp 1 or nhiều các câu lệnh T-SQL thành 1 nhóm và lưu trên DB Server. Khi 1 câu lệnh gọi chạy stored procedure lần đầu thì SQL Server chạy nó và lưu vào đệm gọi là plan cache, những lần tiếp theo sẽ dùng lại plan cache nên cho tốc độ tối ưu. DBA có thể tạo ra 1 nhóm các câu lệnh và gửi cho người khác và họ k cần biết nội dung bên trong là gì, chỉ cần biết truyền đầu vào là gì thì sẽ có đầu ra như nào
+
+Khi đã tạo procedure, vào database của ta -> Programmability -> Stored Procedures sẽ ra các procedure ta tạo ra. Có thể update procedure bằng giao diện bằng cách rightclick procedure -> modify
+
+Proc trả về giá trị có 2 cách là biến OUTPUT lưu giá trị or RETURN giá trị
+
+View có max 1024 statement, proc có max 1024 params.
+
+-> Procedure cũng như view, k cho người dùng thao tác với bảng trực tiếp và tái sử dụng mạnh. Procedure k gắn với database hay object cụ thể nào như view. Dùng stored procedure thì code nó để modify query sẽ dễ hơn là xây dựng câu lệnh bằng GUI, GUI chỉ cần gọi nó và k cần đổi gì thêm vì vc chỉnh sửa thế nào thì ta tự code trong procedure ok. Giảm lượng traffic khi gửi qua mạng vì 1 lời gọi execute procedure sẽ tốt hơn gửi từng dòng lệnh query qua mạng để execute.
+Phân biệt procedure và function: procedure thg dùng để query r lấy output gửi cho 1 ứng dụng cụ thể dùng mang tính thực tiễn, trong khi function như 1 query trả ra kết quả cho 1 query khác. Function có thể return ra 1 bảng và k thể thay đổi môi trường server hay môi trường hệ điều hành. 
+
+-> procedure có 3 loại:
+--> system procedure có sp_ tiền tố để quản lý SQL server có thể xem trong SSMS. 
+--> sp extensions là các câu lệnh viết bằng C, C++ dùng dưới dạng dynamic link lib(DLLs) mà SQL có thể load và thực thi. Có 2 loại là external sp có tiền tố xp_ và user-defined sp
+
+-> Các options:
+WITH RECOMPILE option sẽ khiến CREATE PROCEDURE được recompiled mọi lúc nó chạy, proc có thể optimized với các params mới, còn EXEC PROCEDURE sẽ compile procedure và lưu lại proc cho lần execution đó(mỗi lần exec với params khác nhau mà) và lưu plant vào procedure buffer for later exec procedure. Tức là option này làm cho proc recompile every time chạy create và exec, mỗi lần chạy nó optimize plan để tăng tốc lần kế tiếp nếu trùng. 
+
+WITH ENCRYPTION sẽ làm câu lệnh proc bị mã hóa và k thể xem nội dung query như nào
+
+
+
+# Câu lệnh function
+Procedure k có giá trị trả về nhưng hàm thì buộc có. Dùng function thoải mái trong phạm vi database. VD function có sẵn kiểu SUM, procedure có sẵn kiểu sp_rename
+Khi đã tạo function, vào database hiện tại -> Programmability -> Functions -> Scalar-valued Function
+
+Mỗi khi create, ta có thể dùng CREATE OR ALTER để nếu tồn tại thì modify, k thì create. VD: CREATE OR ALTER FUNCTION udfSplit( @string VARCHAR(MAX) ) ...
+
+-> Các option return cho CREATE FUNCTION:
+ENCRYPTION: The function's source code will not be stored as text in the system.
+SCHEMABINDING: Ensures objects are not modified to affect the function.
+RETURNS NULL ON NULL INPUT: The function will return NULL if any parameter is NULL.
+CALL ON NULL INPUT: The function will execute even if the parameter is NULL.
+EXECUTE AS clause: Defines the security context to execute the function.
+VD: 
+CREATE FUNCTION [dbo].[ufnLeadingZeros_new](
+    @Value int
+) 
+RETURNS varchar(8)
+WITH SCHEMABINDING, RETURNS NULL ON NULL INPUT  
+AS 
+BEGIN
+    DECLARE @ReturnValue varchar(8);
+    SET @ReturnValue = CONVERT(varchar(8), @Value);
+    SET @ReturnValue = REPLICATE('0', 8 - DATALENGTH(@ReturnValue)) + @ReturnValue;
+    -- REPLICATE là hàm tạo chuỗi lặp
+    RETURN (@ReturnValue);
+END
+=> k thể update data trong function, chỉ được return 1 giá trị do đó họ return hẳn 1 statement để trả ra list giá trị được, or return table variable(table function)
+
+
+
+# Câu lệnh Trigger:
+TRIGGER trong SQL giúp ta bắt các sự kiện mỗi khi update, insert hay delete thì ta muốn làm gì đó. VD: 1 bảng GiaoVien và ta muốn mỗi khi 1 giáo viên mới được thêm vào bảng thì làm gì đó, VD check nếu lương dưới 5tr thì bỏ qua, trên 5tr mới thêm vào bảng chẳng hạn. Hay mỗi khi có data thêm vào thì update cái gì ở 1 bảng mới nào đó.
+
+Vào database hiện tại -> Tables -> Chọn table có trigger -> Triggers sẽ hiện các trigger của table này
+
+Trigger có thể đi với ROLLBACK
+TRIGGER bên trong k được dùng các hàm gây ảnh hưởng lớn tới dữ liệu như ALTER DATABASE, DISK RESIZE,..
+
+-> Trong SQL còn có 2 loại bảng ảo là INSERTED và DELETED. Mỗi khi dữ liệu được insert hay xóa thì data sẽ được lưu vào 2 bảng này. Lưu ý UPDATE thực chất là xóa và add lại nên sẽ phát ra sự kiện update nhưng cả 2 bảng đều được lưu. Cụ thể bảng inserted sẽ lưu data mới của row vừa update và deleted lưu data cũ của row vừa update. VD khi event insert xảy ra thì bảng deleted k lưu gì cả nhưng bảng inserted lưu dữ liệu row mới được inserted
+2 bảng ảo này chỉ tồn tại trong trigger -> sai vì gọi OUTPUT inserted cũng được khi dùng lệnh khác
+
+-> Khi implement database thì phía DB Server phải check hết đk constraints chứ k thể chỉ check bằng ứng dụng vì nếu người dùng bỏ qua ứng dụng mà tự dùng tool để gửi request đến thẳng database thì dữ liệu k được check or phá hỏng database mất. 
+Cái constraints UNIQUE trong 1 số DB chỉ dùng được với 1 trường(trong SQL dùng UNIQUE với nhiều trường thoải mái cách nhau dấu phẩy). Khi dùng DB có primary key là duy nhất, ta phải tự xác định constraints UNIQUE cho candidate key vì DBMS k tự check. Khi dùng constraints reference to bảng khác thì có thể refer tới PRIMARY KEY hoặc UNIQUE KEY đều được.
+PRIMARY KEY có default index là clustered, UNIQUE KEY có default index là NON_CLUSTERED và được NULL
+VD: AB->C và BC->A thì có thể dùng 1 table ABC với primary là AB, còn điều kiện BC->A ta dùng constraints CHECK để kiểm tra là 1 cách hay mà ta kp tạo 1 bảng mới để thể hiện mỗi cái dependency này
+Trigger giúp bảo vệ database tốt hơn vì check được điều kiện phức tạp hơn. VD:
+Student(id, name, DoB, age, clazz_id) và Class(id, name, NumberOfStudent)
+=> Muốn thêm 1 student của class nào vào Student thì update NumberOfStudent của Class có id đó. Phải dùng trigger.
+
+1 kiểu check nữa là ASSERTION: 
+CREATE ASSERTION teachingSubject CHECK (
+(SELECT COUNT(*) FROM teaching) >=
+(SELECT COUNT(*) FROM subject) );
+DROP ASSERTION teachingSubject
+=> Mọi modification đều lôi cái này ra check tự động k kiểm soát được
+
+-> Cú pháp trigger đầy đủ:
+CREATE [OR REPLACE] TRIGGER <trigger_name>
+{BEFORE | AFTER | INSTEAD OF | FOR }
+{INSERT | DELETE | UPDATE [OF <attribute_name>]}
+ON <table_name nếu nh thì ngăn cách dấu phẩy>
+REFERENCING {NEW | OLD} {ROW | TABLE} AS <name> => or use inserted, deleted cx đc
+[FOR EACH ROW ]
+[WHEN (<condition>) ]
+BEGIN
+ <trigger body goes here >
+END;
+=> Trong vài DB họ dùng :NEW thay cho từ NEW
+=> Phần reference có 2 loại ROW | TABLE là vì TH ta INSERT INTO <table> SELECT <...> tức thêm hẳn 1 table vào 1 table khác thì chạy vào reference table
+=> BEFORE trigger thg dùng khi cần check validation phức tạp. AFTER trigger thg dùng khi cần thay đổi 1 cái gì sau khi 1 cái gì đó được thay đổi. INSTEAD OF thg đổi hẳn lệnh, VD xóa 1 data trong bảng nhưng ta lại k xóa mà chuyển nó đến 1 bảng deleted thì dùng INSTEAD OF or update trường isDeleted của nó là true
+
+--> INSTEAD OF trigger cho phép bỏ qua câu lệnh INSERT, DELETE or UPDATE trên 1 table or view. VD khi muốn có hành động delete trên table product thì ta k xóa sản phẩm mà sẽ chạy 1 câu lệnh UPDATE status sang chế độ ẩn.
+
+TRIGGER thì FOR UPDATE và AFTER UPDATE là y hệt nhau, chỉ có BEFORE, INSTEAD OF là phân biệt
+
+-> Trap nặng: TRIGGER nếu muốn dùng cho nhiều operation như INSERT hay UPDATE đều check thì ta có thể tạo 2 trigger or tạo procedure cho trigger và 2 cái gọi nó nhưng cách đơn giản nhất là FOR INSERT, UPDATE tương tự cách nhau dấu phẩy quá ez. Đm cứ nghĩ lằng nhằng nhưng bảng deleted thì có UPDATE sẽ có 1 giá trị nhưng insert thì nó k có giá trị nào. Do đó ta có thể check kiểu:
+DECLARE @oldprice decimal(10,2), @newprice decimal(10,2)
+SELECT @oldprice = Price FROM deleted
+IF(ISNULL(@oldprice, 0) = 0) => thì mặc định khi insert sẽ null và nó đúng sẽ nhảy vào case insert
+
+
+
+# Câu lệnh transaction:
+VD: A chuyển B 100k, A - số dư 100k, mất điện tất cả, B k được cộng 100k => phải nhờ transaction mới được.
+Cơ chế: tạo ra 1 session => triển khai startTransaction, 1 loạt đều thỏa mãn thì commitTransaction, 1 sự kiện thất bại sẽ abortTransaction và hoàn tác => end Session
+
+Hầu hết các database hiện tại đều hỗ trợ ACID nhưng ta phải chủ động dùng nó vì nó sử dụng khác nhau. VD SQL thì mọi câu lệnh là 1 trans và ta muốn gom nhiều câu lệnh làm 1 trans thì phải tự khai báo. Redis có vài câu lệnh là transaction thôi. MongoDB thì transaction chỉ áp dụng cho replica set mà ta phải tạo.
+
+
+
+# Biến type loop condition rule
+Trong SQL, kiểu dữ liệu chỉ định type và kích thước của Column trong vùng nhớ dựa trên kiểu chuẩn do ANSI/ISO cung cấp nhưng chỉ tầm 16/143 được dùng phổ biến
+Với các kiểu dữ liệu lớn, thừa 1 byte cho 1 column có thể thất thoát bộ nhớ rất lớn
+
+Dùng toán tử số học cho các biến thoải mái. Có thể lưu hẳn câu lệnh SQL vào biến
+Biến bắt đầu bằng @
+Khối lệnh BEGIN END là tập hợp 1 or nhiều câu lệnh khác chia ra để nhìn cho dễ, có thể dùng lồng nhau, giống {} của C++
+IF ELSE phải đi với BEGIN END ở từng cục IF và ELSE nếu thực hiện nhiều lệnh, còn 1 lệnh thì viết gọn được
+
+-> 1 số type:
+Kiểu DEC(p,[s]) thì s số sau dấu chấm và số các chữ số tổng cả trước và sau dấu chấm là p. VD: duration DEC(5,2). 
+Kiểu NUMERIC(3,2) cũng tương tự là DEC(3,2)
+
+Pb: VARCHAR(50) tiếng anh k dấu; NVACHAR(50) là kiểu tiếng việt có dấu
+
+Kiểu BIT chỉ nhận 2 giá trị 0 và 1
+
+Khi khai báo biến mà k truyền giá trị thì mặc định là:
+DATETIME là GETDATE()
+Các kiểu cơ bản bth default là 0/''/0.0
+money, bit mặc định là NULL
+
+-> Kiểu ký tự
+DECLARE @v1 Char(10) = 'Hello1'; -- k chứa Unicode, cấp phát tĩnh
+DECLARE @v2 Nchar(10) = 'Hello2'; -- chứa Unicode, cấp phát tĩnh
+DECLARE @v3 Varchar(10) = 'Hello3'; -- k chứa Unicode, cấp phát động max đến n ô nhớ
+DECLARE @v4 Nvarchar(20) = N'Nguyễn Thụ Hiếu'; -- chứa Unicode, cấp phát động max n ô nhớ
+Động tức là lượng ô nhớ bám sát bằng lượng string truyền vào nên tiết kiệm hơn so với tĩnh nhưng nhiêu khi ta muốn mọi value trong 1 cột được đồng bộ cùng kích thước thì vẫn dùng tĩnh. Tĩnh 10 ô nhớ thì ta nhập vào 5 thì 5 ký tự còn lại mặc định là rỗng còn động k có rỗng nhưu v theo sau. 
+Để nhập Unicode dùng cú pháp N'<chữ>'
+VD: varchar(10) => string length <= 10; Còn char(10) string fix length = 10
+
+Kiểu Text: k chứa Unicode, cấp phát động theo độ dài chuỗi nhập vào chứ kp bằng số như trên
+Kiểu Ntext: chứa unicode, cấp phát động theo độ dài chuỗi nhập vào
+Lưu ý 2 kiểu này k dùng khai báo cho local var, chỉ dùng trong vài TH đb mà ta k xét, cứ dùng kiểu char trên thôi
+
+Kiểu CHAR giống hệt CHARACTER
+
+-> Custom type:
+Khi đã tạo type, vào database hiện tại -> Programmability -> Types -> User-Defined Data Types sẽ hiện các type ta định nghĩa
+
+Tạo type với sp_addtype or CREATE TYPE. Dùng CREATE TYPE cũng như các kiểu khác, dùng được schema, dbo là schem mặc định
+Xóa type với sp_droptype or DROP TYPE. Có thể xóa type bằng giao diện. 
+Khi xóa type phải đảm bảo k có table nào dùng nó nếu k sẽ error. Sửa type rất phức tạp vì nó yêu cầu query tất cả các column dùng type đó và chuyển sang type khác
+
+-> Rule
+
+-> Trả lời câu hỏi thắc mắc bấy lâu. Khi 1 câu query chỉ lấy 1 trường và chỉ có đúng 1 record thì sẽ dùng được như 1 giá trị. VD ta có thể dùng = thay vì dùng = ANY() => nếu k có giá trị thì ra NULL và coi là 1 giá trị NULL đb chứ kp là 0
+Ta vẫn có thể dùng nó như 1 collection được nếu thích
+
+
+
+# Câu lệnh cursor 
+
+
+
+# Common Table Expression(cte):
+Muốn dùng thì câu lệnh trước phải kết thúc bằng semicolon
+CTE tạo ra xong chỉ dùng được 1 câu lệnh
+
+
+
+# Câu lệnh index:
+Mở table -> vào indexes trong SSMS sẽ thấy các indexes tạo ra
+
+Vc tối ưu chỉ mục sẽ giúp xác định vị trí của dữ liệu cần tìm. VD tìm 1 thứ bình thường sẽ duyệt hết vài triệu record trong bảng nhưng khi có index thì chỉ cần tìm vài trăm
+Khi tạo PRIMARY key thì cũng chính là đánh chỉ mục gọi là clustered index, các hàng k được trùng dữ liệu với nhau. Các loại chỉ mục kp PRIMARY sẽ gọi là secondary index or non-clustered indexes
+
+Clustered index giúp tìm kiếm trong table nhanh hơn nhưng insert delete chậm hơn. Bất kể kiểu tìm kiếm nào đều có tốc độ tìm kiếm và update dữ liệu nghịch nhau. Trong các cơ sở dữ liệu lớn mới thấy rõ sự khác biệt về tốc độ. Nonclusterd index có thể giúp tìm kiếm nhanh hơn nhưng update vẫn nhanh, update chỉ thêm 1 trường index nên k đáng kể nhưng nó lại có thể tối ưu vì data so le và tốn thêm bộ nhớ. Tức vẫn k thể có cách nào tăng tốc mà hoàn hảo cả đâu, cái gì cx đánh đổi và vc xđ đánh đổi như nào phải làm ngay từ đầu khi tạo database.
+
+K thể đánh 2 index cùng trường. Các trường được đánh index có thể dùng where tìm kiếm tốc độ cao. 1 table ta chỉ được tạo ra 1 cái index, cái index đó có thể đánh được nh trường
+
+K đánh index cho text
+
+
+
+# Câu lệnh SELECT
+
+
+
+# Other:
+-> Vc đầu tiên trước khi thực hiện được 1 query là phải chắc chắn đang thao tác vói đúng database
+
+-> Nên nhớ các database cho sẵn thg là các record độc lập chỉ vào từng phần tử riêng biệt. VD cái book_loan thì ta hiểu là thông tin về 1 lần mượn của 1 cuốn sách, tức COUNT cái đó là số lần mượn luôn chứ kp là mượn sách nào bnh lần. Nếu thế thì nó sẽ có thêm trường quantity.
+Khi nhóm nhiều bảng lại nhớ chú ý quan hệ của các bảng, 1 bảng chứa nhiều record id bảng khác thì có thể dùng GROUP BY 
+
+-> SQL Injection là code inject để truy xuất thông tin người dùng. Nó giống tấn công XSS của JS ấy. VD: người dùng nhâp vào ID của họ và thực hiện:
+SELECT UserId, Name, Password FROM Users WHERE UserId = <id người dùng nhập>; => nếu họ nhập 105 OR 1=1 thì xử lý thành:
+SELECT UserId, Name, Password FROM Users WHERE UserId = 105 or 1=1; sẽ lộ password của tất cả mn trong database. Tương tự họ dùng 105; DROP TABLE Suppliers sẽ thành: 
+SELECT * FROM Users WHERE UserId = 105; DROP TABLE Suppliers; sẽ phá hoại xóa database.
+
+-> Trap bài tập: Để tính revenue của mỗi sản phẩm, ta phải lấy SUM(unitPrice * quantity) chú ý đọc kỹ đề
+
+Nên nhớ trong SQL k có && hay || hay == mà dùng OR, AND và =
+
+-> Tên thì dùng clazz chứ đừng class kẻo lỗi đặt tên
+Quy ước đặt tên: Bảng thì viết hoa chữ cái đầu và k dùng số nhiều, biến dùng camel key, các query dùng viết hoa hết, trường viết thường hết. VD: Nên dùng firstname, first_name -> k dùng firstName, k dùng số nhiều
+
+-> VD: SELECT SUM(Name) FROM Company; => lỗi
+Trigger được thực hiện phía system tự động khi có sự kiện, kp ở phía client
+
+Thuộc tính recursive thì thêm data như nào. VD 1 bảng:
+Acc(AccID, Password, AccID_Parent) với AccID_Parent refer đến primary key của Acc là AccID kiểu ta muốn tạo 1 list các tài khoản con được nối từ tk cha ấy => rất đơn giản, khi tạo database ta chưa đặt reference key vội mà tạo 1 tk root để quản trị trước đã với trường AccID_Parent trùng vơi AccID, sau đó mới thêm constraint primary key với alter table là được
+
+

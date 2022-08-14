@@ -1,0 +1,80 @@
+-> Database
+Kp lúc nào cũng mặc định là phải có database, ta chỉ cần database khi cần share 1 lượng lớn data, thay đổi thường xuyên, xử lý đồng thời, rapid queries,...
+
+Khi các ứng dụng ngoài muốn connect với server và database trong server có thể dùng connection string. Connection string lại có nhiều loại khác nhau và phải tra google với các ứng dụng đôi khi rất khó tìm
+
+Ta đang học đều đang thao tác ở tầng dễ là data access và programming language. Ở trình độ cao hơn họ sẽ học các Data structure tool và lib như tensorflow, Mlib để dùng cho DMaML hay Data structure method để visualization số liệu và cao hơn nữa ở mức chuyên gia về phân tích dữ liệu.
+
+Thực tế có nhiều loại database model: như hierachical, network, relational, document, entity-relationship thì cái ta học là relational là 1 trong rất nhiều các loại database 
+
+
+-> Thực chất SSMS chính là phần mềm phía client dành cho những người xử lý dữ liệu, còn SQL Server là phía server vì client có thể dùng SSMS để tương tác giao diện với server thực
+SSMS khi vào sẽ cho ta chọn server, network server là các server từ bên ngoài còn local server là các server tự detect có trong máy để SSMS kết nối vào và đóng vai trò là giao diện cho database server đó.
+
+Azure là 1 DBMS thì nó thay thế cho Microsoft SQL Management Studio, dùng cái nào cũng được.
+
+ADO(ActiveX Data Objects) là các thành phần trong phần mềm giao diện cho các ứng dụng client truy cập vào data. 
+DAO(Data Access Objects) cũng là 1 lớp lo việc truy cập CSDL rồi viết các hàm thao tác với dữ liệu r chuyển cho tầng server xử lý.
+=> 2 cái này là 2 method giúp truy cập CSDL và có ưu nhược điểm riêng với cú pháp hơi khác nhau 1 chút thôi.
+
+Các thao tác thêm, sửa, xóa, xem, thêm khóa chính,.. đều có thể thực hiện bằng giao diện trong SSMS
+
+Dùng giao diện người ta gọi là SQL Server Management Studio còn dùng câu lệnh người ta gọi là dùng Transact-SQL
+
+
+-> SQL là 1 tiêu chuẩn của ANSI/ISO, là 1 ngôn ngữ máy tính. Ngày xưa có tên SEQUEL(Structured English Query Language) nhưng sau đổi thành SQL để tránh vc tranh chấp nhãn hiệu. Nh người nói rằng SQL là Structured Query Language (Ngôn ngữ truy vấn có cấu trúc) nhưng thực tế lịch sử kp như v. Nó ban đầu chỉ được xd để quản lý và truy lục dữ liệu được lưu trữ trong Hệ thống R tại IBM.
+
+T-SQL là Transact-SQL là 1 phần mở rộng của SQL và phát triển theo chuẩn ISO và ANSI.
+MySQL, T-SQL, SQL hay cái gì đi chăng nx cũng chỉ là ngôn ngữ SQL, đôi khi cú pháp nó hơi khác nhau nhưng nhìn chung là 1.
+
+Cài SQL trên Linux vất vả vl: https://www.youtube.com/watch?v=bzOljuaYeUk
+Xong phải thao tác lệnh trên terminal thì ăn cứt. Dùng SSMS giao diện tốt hơn.
+
+
+-> MySQL và SQL Server(Microsoft SQL Server) có những ưu nhược điểm riêng nhưng SQL Server hiện tại vẫn là phổ biến nhất. Phát triển bởi Microsoft lưu dữ liệu chuẩn RDBMS và cũng là 1 hệ quản trị cơ sở dữ liệu quan hệ đối tượng(ORDBMS)
+SQL Server bảo mật cao, cho phép phân tích dữ liệu bằng SSAS(SQL Server Analysis Services) hay tạo được báo cáo bằng SSRS(SQL Server Reporting Services) hay thực hiện quá trình ETL(Extract-Transform-Load) bằng SSIS(SQL Server Integration Services)
+
+Nó gồm 2 thành phần: Workstation - cài trên thiết bị vận hành, là các phần mềm tương tác với máy chủ server như SSMS; Server cài trên máy chủ chính tập trung là các dịch vụ như SQL Server, SQL Server Agent, SSIS, SSAS, SSRS, SQL Browser, SQL Full Text Search
+=> 1 máy có thể cài nhiều phiên bản SQL Server trên cùng 1 máy chủ để tiết kiệm chi phí và tách biệt giúp hệ thống an toàn hơn
+SQL Server có nhiều phiên bản ứng dụng cho 1 mục đích cụ thể để tối ưu. Đó là lý do ta thấy có nhiều phiên bản vãi nồi. VD: Enterprise, Standard, Workgroup, Web, Developer, Express(bản cơ bản dùng max 1 CPU và 1GB RAM, dung lượng bản max là 10GB), Compact, Datacenter, Business Intelligence, Enterprise Evaluation
+
+
+-> SQL Server có 2 hình thức cài là trên máy đơn or trên hệ thống Cluster. Cluster là một hệ thống server bao gồm nhiều máy chủ được kết nối với nhau theo dạng song song hay phân tán và được sử dụng như một tài nguyên thống nhất. Cài trên máy tính của ta chỉ là cài trên máy đơn mà thôi.
+Để cài phải có quyền admin và phiên bản yêu cầu phải có .net framework 4.0, Windows PowerShell 2.0, Windows installer 4.5/later
+Để thao tác với SSMS phải tạo 1 tk để đăng nhập. Chuột phải vào Security và New Login -> setup mọi thứ
+Sau khi có tài khoản, ta có thể tùy chỉnh quyền hạn của tài khoản đó. Nên nhớ mỗi database đều chỉ có 1 db_owner, ta có thể add thêm user truy cập vào database của ta. Nhưng nếu ta set cho 1 tk là db_owner, thì quyền owner chuyển sang người đó và xóa quyền đó ở người khác. Khi 1 tk owned 1 schema của database thì nó sẽ k bị xóa khỏi list user kể cả khi ta đã xóa user đó trong Security chung của database trừ khi ta tắt schema cũng như đổi quyền đó sang cho người khác để user đó k còn owned schema nào nx là đc.
+Xóa tài khoản phải xóa nó trong từng database nx nhé
+
+Set up tk đăng nhập được: Security -> New Login -> Tạo account, set default database, Status set login là enabled và grant quyền access database engine -> rightclick database -> Security -> check SQL Server and Window Authentication mode -> vào database nào đó -> New User -> đặt và chọn User là tk login vừa tạo -> cấp quyền gì cho nó với database này -> đăng nhập được
+Vì cái tk phải có ít nhất 1 database nào đó truy cập được thì mới đăng nhập được.
+Để dùng sa: rightclick sa -> đổi mật khẩu tùy ý -> set up quyền -> đăng nhập được -> tài khoản sa k cần cấp quyền user cho database nào hết vì nó mặc định vào được tất cả
+Để xóa được user khỏi database, phải cấp quyền owned schema của nó cho tk khác(cho dbo) thì khi nó hết quyền owned thì mới xóa được
+=> Nch là có thể tạo tài khoản trong Security và tùy ý phân quyền hay làm gì với nó với từng database. Custom mọi thứ về tài khoản và từng database và cả việc dùng được tk sa.
+
+=> Mặc định dùng Window Authentication là đăng nhập vào CSDL với vai trò như root là người tạo ra mọi thứ. Còn tạo tk là từng người dùng có thể đăng nhập.
+TK sa là tk quản trị viên có tất cả giống như window authentication, ngoài ra còn có nhiều tk của system ta k cần quan tâm.
+Bên cạnh database ta tự tạo còn có các database hệ thống có sẵn nx
+
+Muốn tạo database phải dùng tk sa or window auth chứ tk người dùng bth k làm được
+
+Bôi đen + F5 => chỉ exec phần code bôi đen
+
+SQL là RDBMS được dùng cho các hệ thống OLAP. Mô hình dựa trên bảng. Có thể mở rộng chiều dọc. Cân các truy vấn phức tạp. Có hỗ trợ ACID. Dữ liệu rõ ràng và xác định trước.
+NoSQL gọi là cơ sở kiểu phân tán. Công nghệ hỗ trợ nhiều loại khác nhau. Có thể chưa biết rõ data có cái gì thì nên dùng vì mở rộng dễ. Chơi kiểu key-val. K có ngôn ngữ query cụ thể, khi implement bằng cái nào thì dùng cái đó. Mở rộng chiều ngang ok để tăng hiệu suất database. K phù hợp câu lệnh phức tạp. Hỗ trợ mạnh ACID. Nó được sinh ra sau SQL và khắc phục nhược điểm của SQL nhưng k thể thay thế SQL khi mà dữ liệu rất lớn thì bó tay.
+Có 2 hệ thống là OLAP(on-line analytical processing) và OLTP(On-line transactional processing). OLTP xử lý giao dịch trực tuyến, có tính chất ACID được dùng trong hầu hết các nghiệp vụ ở dạng transaction VD rút tiền từ tk ngân hàng, real time. OLAP là phân tích trực tuyến, nó thg làm vc với lượng rất lớn data nên độ chính xác và toàn vẹn giao dịch k đươc như OLTP. Nó cung cấp các con số khủng hoảng giúp ta nhìn ra bức tranh lớn trong thực tế, trong đó các nhóm nhỏ dùng OLTP. VD ta sẽ k thể tương tác với hệ thống OLAP của ngân hàng. Thực tế SQL cũng có transaction nhưng chỉ dùng khi thực sự cần thiết vì dữ liệu lớn lên transaction thực hiện sẽ lâu. Cách phân biệt tốt nhất là OLTP phải ổn định và nhanh để phục vụ query data ngay lập tức trong khi OLAP đủ lớn và mạnh mẽ về tính toán để phân tích dữ liệu kinh doanh.
+Mở rộng chiều dọc là tăng CPU, RAM, HDD cho các node đã có của CSDL, sẽ làm cho 1 node CSDL mạnh lên nhiều lần. Mở rộng chiều ngang sẽ tăng số lượng node lên đông hơn trong cụm cluster, 1 node có thể xử lý yếu. Chiều dọc chắc chắn bị giới hạn về công nghệ k thể tăng mãi nhưng chiều ngang cứ thêm mãi được miễn đủ tiền.
+
+
+-> SQLite là dùng SQL mà k có database server
+SQLite là hệ quản trị cơ sở dữ liệu quan hệ như MySQL. Nó gọn nhẹ, đơn giản, k cần mô hình client-server, k cần cài đặt, k có user password và phân quyền, data lưu 1 file duy nhất. Thg dùng trong các hệ thốn vừa và nhỏ vì tốc độ cao nhưng thg sử dụng trong quá trình phát triển vì tránh rắc rối khi cài đặt, hỗ trợ đầy đủ tính năng nâng cao, dễ dùng, open source, có sẵn trên nhiều hệ điều hành, đa nền tảng, API thậm chí nhanh hơn hệ thống tệp tin trực tiếp I/O trong nhiều TH, có ACID. Ta k đi sâu vào nó vì k áp dụng nhiều trong dự án quy mô thực tế ở bản production.
+
+
+-> Unikey run administrator mới dùng được trong các ứng dụng run administrator
+Có thể vẽ diagram cho relational database -> rightclick vào database diagram và tạo chọn toàn bộ table
+
+
+-> Bài tập:
+Khi làm bài chú ý đề bài hỏi là in ra số lượng học sinh của giáo viên ở bảng Teach ref đến 2 bảng Teacher và Student. Nên nhớ đề bài bảo in ra số lượng chứ kp in ra giáo viên nên nếu giáo viên k dạy học sinh nào thì vẫn phải in ra tên giáo viên đó với số lượng là 0. Tức là giáo viên đó có thể thậm chí k tồn tại trong Teach nên có thể kết quả ra thiếu or giáo viên có số học là NULL. Nhớ phải in hết
+Ta có thể dùng leftjoin với ISNULL để lấy nếu k có hs nào sẽ k trả ra NULL mà trả ra đối số thứ 2 truyền vào là 0
+
+

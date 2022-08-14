@@ -1,0 +1,300 @@
+Database: 
+
+
+# Basic:
+Stored database -> internal schema(internal level) -> conceptual schema -> many external views for each end user
+=> internal schema là file lưu key-val; conceptual level là các bảng và query, external view là view thấy data trong SQL, xem part of data. DBMS cái trên OS và có quyền truy cập file.
+
+-> Định nghĩa DB chuẩn: là shared collection of related data that is organized so that it can be easily accessed, managed and updated. Database giúp các ứng dụng chia sẻ database cho nhau, minimize redundancy. Database là phiên bản tốt của file management system vì nó access data dễ và tiện, chia sẻ linh hoạt.
+Data -> DBMS -> Database / Metadata -> tức DB lưu cả metadata
+
+Số lượng primary key trong table chỉ có thể là 0 or 1, 1 table có thể k có primary key được, hệ thống tự hiểu. Số lượng foreign key thì >= 0.
+
+-> Thuật ngữ:
+DataModel: Về mặt concept kiểu type <type name> = record
+Schema: Rõ hơn của model về khi cấu trúc data structure cụ thể rồi type student = record
+Instance: Từng table, là giá trị của schema.
+=> Do đó ít khi dùng thuật ngữ data model mà dùng schema đê mô tả dữ liệu.
+Có 3 vai trò user quan trọng: admin là người toàn quyền, designer là người thiết kế lúc tạo, end-user là người sử dụng query
+
+Record hay tuple là 1 single row trong bảng. Relation data lưu dưới dạng bảng. Cardinality là số lượng record của 1 relation. Degree là số lượng attribute của relation hay field trong bảng. Entity là đang nói về 1 field trong số các field.
+VD: R(A1, A2, A3,...) thì R là relation name và mỗi cái tuple là dạng t=<v1,v2,v3,...>
+Mỗi tuple là 1 ordered list. KH relation thg là R, Q. KH tuple là r,t. 
+Mỗi attr có 1 domain VD dom(A1) = dom(age) = {2,9} miền giá trị
+Database Object là các defiend object trong DB, nó chỉ chung.
+Relation: Attribute - Record; Table: Column(Field), Row(Tuple)
+
+
+
+# Storage:
+-> Data được lưu trên đĩa cứng, vc truyền data giữa đĩa cứng và main mem thông qua units of disk blocks, mỗi cái có size từ 4-8KB. 
+--> Có 2 cách lưu data trên database lưu vật lý: primary file organization và secondary file organization.
+---> Primary file organization có 3 PP là Unorderd Records, Orderd Records và Hash file. Tùy ứng dụng select hay update nhiều mà dùng kiểu khác nhau
+---> Secondary file organization là PP đánh index để truy vấn hiệu quả chính là thứ dùng trong database. Có nhiều data structure lưu index DS tùy loại DBMS.
+
+-> Sparse index và dense index
+
+-> Disk defragmentation trong máy tính nếu right click properties sẽ thấy ổ đĩa chia theo kiểu so le:
+xanh trắng xanh xanh xanh trắng xanh xanh xanh
+=> VD các vùng màu xanh là ứng dụng chạy. Đáng lẽ nó phải kín xanh hết nhưng vẫn dôi ra các vùng màu trắng là do ứng dụng dùng xong thì bộ nhớ giảm đi làm dôi ra các phần thừa. Về sau các ứng dụng dùng thêm vùng nhớ thì nó append dùng tiếp vào các phần đằng sau nếu k đủ thành ra 1 ứng dụng nhưng lại lưu ở nhiều vùng nhớ rời rạc, địa chỉ rời rạc làm nó truy cập bị chậm. Các phần mêm disk optimization chính là cơ chế rearrange lại các vùng nhớ làm cho ứng dụng sau khi cài và sử dụng sẽ lưu về các vùng liên tiếp nhau trên disk.
+
+-> Cơ chế: Khi ứng dụng chạy sẽ lưu theo các disk block, giả sử mỗi cục [] là 1 block, mỗi lần read write sẽ access theo 1 lượng memory page query, giả sử ở đây memory page cho query tới 2 block, ứng dụng ta chạy có màu đỏ:
+[đỏ][trắng][trắng][đỏ][trắng][đỏ][trắng][trắng]...
+[         ]       [         ][         ]
+=> Do ứng dụng được lưu rời rạc trên đĩa làm nó tốn rất nhiều query để lấy được data. VD như trên thì các query bị thừa khi query cái trắng là vùng nhớ trống or vùng nhớ của 1 ứng dụng khác k cần thiết => ứng dụng disk optimization cơ chế sẽ đưa các vùng nhớ của cùng ứng dụng về sát lại nhau:
+[đỏ][đỏ][đỏ][đỏ][trắng][trắng][trắng]...
+[      ][      ]
+=> read write I/O chơi đúng 2 memory page query là xong. 
+
+
+
+# Đánh index:
+Pb: clustered index k copy mới mà nó dùng data cũ và sắp xếp lại vùng nhớ, còn materialized view thì copy hoàn toàn
+
+K nên đánh chỉ mục khi các bảng có kích thước nhỏ, hay được cập nhập dữ liệu thường xuyên hoặc các cột có nhiều giá trị NULL
+
+B+ tree là PP lưu index db bằng balance tree duyệt từ root tới leaf nhanh.
+Hash data structure để index k nên use với range query. Cần hiểu rõ sự khác biệt giữa BTree, Hash, Sorted List,..
+
+=> Khi nói đến đánh chỉ mục, ta cứ hiểu là thực hiện xây dựng 1 address table refer đến các mục trong memory trực tiếp Data=[][][][][][] => khi tìm đúng trường sẽ refer đến address table để trỏ trực tiếp đến các khối data mà k cần duyệt lần lượt trên disk. 
+
+-> Disk nó là random access cho phép ta access trực tiếp vào vùng nhớ để lấy data qua 1 list address mà kp duyệt tuần tự(sequential access) trong các địa chỉ của process đó. Đó là refer đến vùng nhớ.
+Data lưu trong file mà muốn access, update, delete nó phải duyệt đến vị trí đó tuần tự thì vc đánh chỉ mục index sẽ giúp random access data trong từng file dữ liệu kiểu:
+Address table: FM -> giả sử đánh index trường gender male hay female
+vùng nhớ file: FFFMFMFMFFFFMMM
+=> thì tùy vào F hay M nó refer trực tiếp trên file bộ nhớ mà k duyệt tuần tự.
+VD select * from person where gender='F'
+
+Nếu k đánh index thì mặc định nó duyệt data trong file bộ nhớ tuần tự của ứng dụng đó. Chú ý phân biệt với refer đến địa chỉ của ứng dụng trực tiếp trên đĩa cứng nó khác, phần mềm opptimization làm cái đó. Cái này là sau khi có ứng dụng chạy r và ta đang search các list địa chỉ của nó => qtr. Tuy nhiên có TH data đánh so le làm tốc độ nó k đổi:
+FMFMFMFMF -> mỗi mem page chơi 2 block thì đánh chỉ mục index tốc độ y hệt như duyệt tuần tự. Cần cân nhắc vì lưu index cũng tốn thêm bộ nhớ.
+
+Nch là optimizer sx lại vùng nhớ cả ứng dụng, index là truy cập nhanh inside ứng dụng, clustered sx lại và non thì k
+
+-> 2 loại index:
+
+--> Clustered index: định nghĩa dữ liệu lưu vật lý trong 1 bảng, giả sử nó lưu B Tree. Loại index này sẽ lưu toàn bộ record muốn tìm ngay trên BTree. Tức kết quả ta có được thì data lấy được trực tiếp từ B Tree node lá. Do lưu toàn bộ data nên nó k cho dùng 2 clustered index trong 1 table vì data quá lớn nếu trường nào cũng clustered. Primary key thg dùng cho index của clustered
+Clustered index sắp xếp lại data on physical mem lưu BTree riêng, mỗi khi thêm record phải chỉnh cả index.
+Clustered index tốc độ nhanh hơn vì nó sắp xếp các khối chứa đúng data liền nhau trên bộ nhớ thì 1 page table nó truy cập nhiều hơn, sắp xếp lại address table và disk xếp theo address table. Do đó maintain với clustered index cũng lâu hơn. Chú ý điều này là được thao tác ở tầng internal schema, trong khi các query bình thường chỉ ở tầng conceptual
+
+--> Non-clustered: chính là vc lưu data thông thường khi mà node lá sẽ chứa pointer tới đúng record muốn tìm và nó không sắp xếp lại data trên physical mem. 1 bảng có thể có nhiều non-clustered index được.
+Tương tự thì nonclustered index cũng address table reference bth nhưng k sắp xếp lại disk nên hiện tương phân mảnh làm page table k query tối ưu và có thể tốn nhiều lần page table hơn.
+Dù non-cluster index có thể tạo bao nhiêu cũng được và đa phần giúp query nhanh hơn nhưng cần cân nhắc vì dùng nó sẽ tốn thêm bộ nhớ nên chỉ dùng khi thực sự có ích.
+
+-> Các câu lệnh tìm 1 giá trị mà khác giá trị nào trong DB thì nên tránh trong thực tế vì nó k tận dụng được index. VD tìm người có ngày sinh 1/4/2000 => nếu ta truy vấn tuần tự nó sẽ tìm tất cả bản ghi và lấy các bản ghi có ngày sinh như v. Nếu ta đánh index cho ngày sinh bằng BTree thì nên query kiểu tìm người có ngày sinh > 1/4/2000 hoặc < 1/4/2000(BTree rất mạnh với range query) => tốc độ sẽ nhanh hơn vì nó lấy 1 bên của Tree là xong. Đương nhiên ở TH này dùng BTree thì nó vẫn duyệt qua các bản ghi khác 1/4/2000 để lấy ra nhưng nếu như có rất nhiều bản ghi cùng ngày 1/4/2000 thì C2 sẽ giúp kp duyệt qua tất cả bản ghi đó mà bỏ qua luôn nên nhanh hơn.
+
+-> Có lệnh USING {BTREE|HASH} để xác định dùng index với DS nào
+
+
+
+# Algebric expression and query processing:
+Algebric expression của 1 câu lệnh SQL chỉ là 1 cách khác để viết ra câu lệnh ra giấy. Có tool convert.
+
+Expression nhận input Relational Algebric(RA). Parser: query --> relational algebric input được thực hiện trước để đơn giản data xử lý
+
+Cần chú ý Parser cho ra query plan(chỉ là RA thôi), còn Optimizer cho ra query execution plan(sau khi tối ưu RA bằng cách transform equivalence, xđ các exec thuật toán, cost estimation)
+
+-> Công việc của optimizer trong công đoạn là tối ưu code. Bước 1 là equivalence transformation để chuyển code sang 1 dạng tương đương cho kết quả tương đương nhưng tốc độ nhanh hơn đáng kể.
+Query processing để tăng tốc thg dùng 2 nguyên tắc: select first(giảm row từng cái), projection as soon as possible(giảm column), phép logic và join đều thực hiện sau
+
+-> Union, Intersect, Difference, CProduct, Selection, Projection, Rename, Inner Join, Division, Left Outer join, Right Outer join, Aggregation, Natural join, Full Outer join chắc là nó kết hợp left và right outer join ngoe ra 2 bên thôi.
+=> Ký hiệu của Natural Join là A |X| B. Khi viết INNER JOIN thì cũng chỉ là NATURAL JOIN thay đổi điều kiện thì viết thêm điều kiện nhỏ ở bên dưới phải ký hiệu. VD: A |X|<a>10> B. INNER JOIN cũng gọi là theta join
+
+-> Equivalence transformation nhưng faster:
+VD: SELECT * FROM R1 WHERE R1.A=X AND R1.C > Y 
+=> o<R1.A=X ^ R1.C>Y>(R1)
+VD: SELECT St.* FROM Student St, Subject S, Enrollment E WHERE St.StudenId = E.StudenId AND E.Sid = S.Sid AND Sname = 'Database' AND grade = 'A' 
+=> C1: n<St.*>(o<sname='Database'^grade='A'>(St*E*S)) -> tức là natural join 3 cái r check điều kiện lồng dần dần
+C2: n<St.*>(St*(o<grade='A'>E)*(o<sname='Database'>S))
+=> Nhìn chung 2 cách tốc độ ngang nhau nhưng nếu kích thước của (o<grade='A'>E) nhỏ hơn đáng kể so với (E) thì cách 2 nhanh hơn cách 1.
+=> Error: CHÚ Ý khi dùng NATURAL JOIN phải đúng thứ tự A*B*C thì A và B có điểm chung, xong cả 2 có điểm chung với C mới được nha
+
+VD: R1 có n phần tử, R2 có m phần tử:
+R1 join R2 thì số lần duyệt = n + n x m tức duyệt R1 n lần, duyệt R2 n x m lần
+R2 join R1 thì duyệt R1 n x m lần, duyệt R2 m lần tức m + n x m
+=> Nếu n << m thì tốc độ join của TH1 nhanh hơn TH2 rất nhiều => optimizer cần chuyển đổi như v và rất nhiều các type khác tương tự trong slide.
+VD: o<O1>(E1 x E2) = E1 |X|<O1>(E2) thì cách 1 sẽ select từng cái tạo cartesian product r dùng select cái thỏa mãn. Cách 2 thì check từng cái thỏa mãn thì lấy thì cách 2 nhanh hơn và rẻ hơn.
+VD: E1|X|(E2|X|E3) = (E1|X|E2)|X|E3 nếu E2|X|E3 << E1|X|E2 thì bên trái rẻ hơn
+
+-> Để convert sang relational algebric các toán tử đã học buộc phải quy về vc join chúng và dùng toán từ difference nhiều.
+VD: SELECT Name FROM BORROWER as B WHERE NOT EXIST ( SELECT * FROM BOOK_LOANS as BL WHERE B.CardNo=BL.CardNo)
+=> Project(name)((S(card_no)(b)-S(card_no(BL)) join B) 
+Natural Join dùng rất mạnh trong các bài tập khi cố muốn lấy 1 phần cái gì phức tạp thì biến đổi cùng tên 1 trường để mất các giá trị k cần thiết r natural join nó.
+
+VD: select E.fname, E.lname, E.address from employee as E NATURAL JOIN works_on as W NATURAL JOIN project as P and PLocation = “Houston” and not exist (select*From Dept_Location Where DNumber = E.DNo and DLocation = “Houston”)
+=> Project(E.fname, E.lname, E.address)(Project(DNO)(S(PLocation='Houston')(E |><| W |><| P)) - Project(DNO)(S(DLocation='Houston')(Dept_Location)) |><| (E|><|W|><|P))
+
+-> Vài quy tắc trong optimation
+--> Equivalence transformation: 
+Tuân theo Heuristics rules để ước lượng cost tốt nhất khi: 
+Phép selection và projection cần ở tầng thấp nhất của operation tree(thực hiện đầu tiên). Phép logic nên thực hiện sau cái này
+Thay thế selection có điều kiện thành join
+Phép join hay tích đề các nên thực hiện sau cùng khi lượng data đã được lọc nhỏ r
+
+--> Exec alg of RA: dùng các operator để thực hiện thuật toán optimize
+---> 1 Pass Operators: là các operator lấy trực tiếp => duyệt table tìm data thỏa mãn add vào kết quả thì có thể duyệt tuần tự or duyệt theo index
+---> Multi Pass Operators: giải quyết các phép join
+----> Sort-merge JOIN: file chứa data phải sorted từ trước, và nó sẽ merge và join lại (thực hiện câu lệnh join) và đọc từng data block
+----> Partition-hash JOIN: Hash từng bảng quan hệ lại trước r join lần lượt lấy giá trị
+---> Execution Strategy: Sau khi nó tạo ra các case rồi sẽ có 1 tree các bước có thể thực hiện.
+----> Materialization: thực hiện từ lá đến ngọn và trở thành input để thực hiện về ngọn, các node internal lại lưu result và trở thành input nên tốn chi phí ghi vào disk cho nó
+----> Pipelining: thành chuỗi queue thực hiện lần lượt và kết quả pass lần lượt qua, nó phải cấu trúc lại thuật toán cho phép nhận stream of input và output
+
+--> Cost estimation: phụ thuộc vào số block, tuple, distinct value
+
+
+
+# Transaction:
+-> Replication management dùng master copy và các slave là secondary copy theo quan hệ 1-m hay n-m. Mô hình này dùng trong nhiều TH như mở rộng data để tăng hiệu suất khi mà đọc nhiều ghi ít, backup database cũng dùng replica lưu bản copy, đánh index hay tạo view cũng là dùng replica. Virtual k lưu trong database nhưng materialized thì có. Vc dùng materialized view chính là dùng secondary copy nên cần viết update thủ công cho nó.
+VD: dùng mở rộng database với quan hệ m-n thì 1 update 1 master là hàng loạt copy phải được update nhưng phải đảm bảo về delay để mọi DB read đồng bộ ngay lập tức
+
+-> ACID stands for atomicity, consistency, isolation, and durability
+--> Tính Durability trong ACID tức là 1 khi đã thành công là trạng thái được bảo toàn và k thể undone, kể cả bị sập điện ngay sau khi thành công
+--> Tính Isolation trong ACID là các câu lệnh bên trong transaction được độc lập với các câu lệnh khác bên trong transaction đó.
+--> Tính nhất quán consistency tức là data lưu trữ phải hợp lệ
+
+-> Trong transaction state có partially committed. Đây là trạng thái kiểu commit từng phần chứ kp toàn bộ trans. VD ta tạo 1 trans là A->B->C là chuyển tiền liên thông 3 người, thì A->B xong partially committed rồi B->C lại partially committed. 
+=> Sau khi committed phần đầu tiên thì A được free và có thể sử dụng, còn lúc đang dùng sẽ bị lock lại. Sau khi committed 1 phần lần 1 thì ROLLBACK về sau sẽ kp thực hiện lại từ đầu mà quay về lần partially committed cuối cùng thôi.
+
+-> Cơ chế lock trong SQL, nó dùng shared lock (LS) xử lý đọc, Exclusive lock(LX) xử lý đọc và ghi. 2 cái này để concurrency control. Nó cho phép bao nhiêu người được đọc hay ghi trong 1 lúc. TH vừa có người đọc, vừa có người ghi thì k thể đảm bảo read sẽ được giá trị đúng nhất. VD vừa read xong thì có người ghi vào làm thay đổi thì nó k cập nhập ngay mà phải read lại thì mới thấy data mới nhất. 
+
+W+W buộc phải lock, R+W tùy TH có thể lock có thể k vì read xong ms sai đôi khi chấp nhận nếu dữ liệu k quá qtr tg. 
+Chú ý lock phải chuẩn và tối ưu. VD A chuyển tiền cho B thì phải lock A trước khi dùng A, lock B ngay trước khi dùng B để tối ưu tg lock là đúng nhất. Nếu lock B ngay từ đầu thì k cần thiết vì thay đổi A chưa thay đổi B thì k tối ưu. Sau khi thay đổi A xong k được unlock A luôn mà vẫn phải chờ đến cuối vì biết đâu có 1 trans nào đó dùng A hoàn thành trong lúc đổi B, nhưng B gặp lỗi bị hoàn tác thì trans kia sai.
+=> gọi là phantom transaction. Lỗi này thg gặp khi 1 trans ngắn, 1 trans dài lồng nhau.
+
+-> Isolation level là các mức độ sử dụng lock. VD strict two phase locking là chỉ unlock hết ở cuối trans. 
+
+4 trạng thái lỗi cần tránh:
+Dirty Reads: trans 1 đang update nhưng chưa committed, trans 2 vào read uncommitted data đó. Về sau trans 1 báo lỗi và ROLL BACK thì trans 2 lại thao tác với data lỗi đó nên sai.
+Lost Update: trans 1 update a, trans 2 update a ngay sau, trans 1 sau đó thao tác gì với a thì lại dùng a của trans 2 là sai
+Non-repeatable Reads: trans 1 read title 2 lần liên tiếp; trans 2 write vào title và lệnh write của trans 2 xen đúng giữa 2 lệnh read của trans 1 => trans 1 read 2 lần liên tiếp nhưng lại cho kết quả khác nhau nên là non-repeatable
+Phantom Reads: trans 1 thực hiện 2 lần cùng 1 lệnh read có điều kiện và trans 2 update dữ liệu đó sao cho lần 2 trans 1 đọc lại ra giá trị khác vì ví dụ có thêm dữ liệu mới hoặc mất bớt dữ liệu cũ vì k thỏa mãn điều kiện chẳng hạn. Nó khá giống non-repeatable
+
+4 level isolation:
+Read Uncommitted: Chả làm gì cả và read hay write gì cứ tự nhiên lấy vào đúng thời điểm được gọi. Nó ăn cả 4 lỗi trên vì chả lock gì cả. Mới uncommitted đã read r
+Read Committed: Đây là level default của 1 transaction nếu ta k làm gì thêm. Mặc định 1 trans k thể đọc dữ liệu từ 1 trans khác đang trong quá trình cập nhập dữ liệu mới mà phải đợi hoàn tất committed, tức là nó dùng lock on write. Các trans phải chờ nhau tuần tự. Chống được dirty reads thôi. K chống được non-repeatable vì nó chỉ khóa khi ghi chứ k khóa khi đọc. Committed r mới được read
+Repeatable Read: Là lock cả read và write ở đầu cuối mỗi lệnh đọc và ghi. Là kiểu dùng phổ biến nhất, nó chỉ k chống được phantom read.
+Serializable: cấp cao nhất chống mọi thứ. Khóa tất ở đầu cuối mỗi trans, thực hiện thành tuần tự cmnl. Thành chuỗi hoàn toàn.
+VD Repeatable Read:
+Trans1: dùng xong B, Read/Write và lock(A), Read/Write và commit(A), dùng tiếp B
+Trans2: Write vào B, Write vào A
+=> Chống Non repeatable read vì Trans2 lúc write vào A trong lúc trans 1 thao tác với A bị cấm. K chống Phantom Read vì trans2 write vào B được làm 2 vị trí trong Trans 1 cùng truy cập vào B cho kết quả khác nhau => hay
+
+-> Transaction recovery:
+log file được tạo ra khi database được tạo, nó lưu thông tin actions để undo về sau. Bản chất nó k hoàn tác actions bằng cách thực hiện ngược lại mà lưu giá trị state tại thời điểm đó và cứ gán giá trị ngược về state cũ thôi. 
+VD khi trans bắt đầu thì viết vào lock file <start T>
+Các biến tạm sinh ra trong transaction k cần lưu vào external mem, chỉ lưu trans state đổi như nào.
+Log file or external mem chỉ được thực hiện lưu khi action flush log được thực hiện, do đó các bước trước thất bại trước khi flush log thì nó chả làm gì cả. Nó k flush liên tục vì flush sẽ viết data vào external mem nên chỉ được gọi khi hợp lý.
+VD: trạng thái hiện tại A đổi từ 8 thành 16 thì log file lưu <T, A, 8> mà k cần qt thực hiện như nào, chỉ biết A = 8 là trạng thái trước đó. 
+=> Khi recover, nó đọc từ cuối lên đầu. 
+
+--> Redo logging cần dùng nếu gặp sự cố như mất điện, hỏng ổ đĩa cần khôi phục các dữ liệu đã commit nhưng chưa kịp ghi lên data file. Nó bảo vệ tính toàn vẹn của dữ liệu.
+Redo logging cũng chỉ là lưu giá trị mới VD <T, A, 16> 
+Nó có thêm <commit T> là new state của database là consistency. Đây là trạng thái data xác nhận là được cập nhập dù trans có thể chưa thực hiện xong. Nếu sau đó có error, nó sẽ quay lại consistent state đã lưu chứ k quay lại từ đầu.
+
+--> Khi undo logging, nó scan tất cả tìm mọi trans chưa hoàn thành để làm, tức là môi lần undo, nó sẽ undo mọi trans khác đi kèm mà chưa hoàn thành. Do đó nếu file lớn thì làm rất lâu vì file xu hướng phình to dần => dùng <checkpoint> là để kbh search quá điểm này. 
+Còn có <start ckpt(T1, T2)> là scan từ dưới lên và đảm bảo T1, T2 chắc chắn đã hoàn thành bên trên, cho nên từ điểm start đến <end cpkt>, chỉ cần tìm các trans kp là T1, T2 là các giá trị cần được cập nhập.
+=> Còn có undo/redo logging là lưu cả data cũ và mới.
+
+Quy tắc undo: mỗi khi undo 1 trans, nó sẽ undo mọi transaction mà chưa hoàn thành luôn. Nó search các trans chưa hoàn thành là các trans có start mà k có commit hoặc abort. Nó undo từng câu lệnh, sau khi xong thì viết aborted vào các trans vừa thực hiện xong. Khi ghi, nó ghi log update trước khi update dữ liệu nhưng phải commit thực sự trước khi ghi log commit. Dùng disk
+Redo cũng thực hiện tương tự nhưng ghi thêm END record vào cuối khi update flush vào disk, mỗi lần redo xong tất cả trans thì cũng ghi end vào và nhận biết trans chưa update bằng cách k có end ở cuối nhưng lại có commit. Commit ở đây chỉ báo là nó đáng ra là đã update trên database rồi, k có end tức là bị lỗi và phải redo lại cũng chỉ từ start đến commit ấy. Dùng main memory
+
+
+
+## Database design:
+Phần DB design chung quy cũng chỉ là: 
+Top down: Entity Relational Schema <-> Relational Schema
+Bottom up: Normalization
+
+
+# ERD:
+-> Vẽ ERD
+--> Vẽ Entity-relationship diagram là vẽ mấy cái hộp hình thoi và hình chữ nhật nối với nhau biểu diễn quan hệ. Chuyển nó sang relational model là biểu diễn cái ER diagram sang các bảng thực tế, nối với nhau như nào, cái nào là primary key, ta dùng mapping process
+Chú ý mỗi cái hình thoi nó là 1 bảng. Đọc đề phải hiểu rõ đề đang nói về thông tin của 1 bảng hay thông tin của 1 relationship. Phải xác định đúng quan hệ từng entity
+Đề bài nói mơ hồ kiểu: mỗi Student chỉ làm việc trên 1 Project gây mơ hồ kiểu 1 Project có thể có nhiều Student không thì k rõ. Khi đó ta phải căn cứ vào nhiều dữ kiện đề bài và nếu cần tới mà k rõ có thể phải tự quy định điều đó. Tự làm theo ý mình thấy là đúng
+Điểm khác biệt thứ 2 là khi vẽ ERD thì quan hệ many to many ta bd bình thường nhưng khi transfer sang relational model thì phải biểu diễn lại thành 2 cái cùng one-to-many cái action
+
+--> Khi viết quan hệ, cố gắng viết chủ động, đừng viết action hình thoi là bị động
+Khi đề bài cho ERClass thì thường là có 2 chiều, nếu k có 2 chiều mà là nói suông thì có thể đó chỉ là đoạn dẫn nhập
+
+Khi design cái ERClass cần đảm bảo 1 bảng có primary key. Có thể nó map 1-1 với 1 bảng khác thì primary của nó có thể là trường mà nó dùng để ref đó nhưng quan trọng là nó phải có primary key. Nếu chuyển từ ERClass sang table phải tự thêm id cho nó. Khi vẽ ERClass cũng phải có primary key nếu cần ref, còn nếu dùng primary key từ 1 bảng khác thì có thể k cần ghi trường id cho bảng này
+
+Kinh nghiệm vẽ ERD, nên nhớ relationship k cần vẽ là chứa id của cả 2 entity
+
+-> Có nhiều loại atrributes khác nhau trong 1 entity set như stored, derived, single-valued, multi-valued, composite, simple/atomic attributes.
+Để map từ ER sang relational thì tùy loại mà ta có thể dùng khác nhau:
+Với strong entity thì ta lưu như bth entity là tên bảng và key của nó là primary key của bảng. Với weak entity thì nó thg có quan hệ với 1 strong entity khác thì bảng của nó có PK chứa PK của bảng strong entity. 
+Với 1-1: C1 là bảng 1 có 1 id của bảng 2 hoặc ngược lại, C2 là 1 bảng mới chứa cả 2 id của bảng 1 và 2.
+Với 1-n: C1 thì bắt buộc bảng n phải chứa identity của bảng 1, C2 là 1 bảng mới chứa PK của cả 2
+Với n-m: Chỉ có 1 cách là 1 bảng mới chứa id của cả 2 bảng
+=> Entity relationship model chỉ là 1 cách biểu diễn khác, nó bd tốt hơn relational model vì có nhiều quan hệ hay. 
+
+-> TH1: Người ta có thể chuyển đổi relationship giữa 2 entity có quan hệ m--n thành 1 entity mới. VD:
+Subject n -- <teach> -- m Lecture 
+thành: Subject 1 -- <taught> -- n Teaching n -- <teach> -- 1 Lecture
+với attribute của relation teach thành attribute của entity Teaching
+Khi biểu diễn như v thì attribute của Teaching ta k cần viết trên ERD có subID và LecID nữa vì quan hệ 1, n biểu diễn điều đó r-> 1 lưu ý khi vẽ oval attribute cho entity
+Vd2: Client n -- <buy> -- m Product
+thành: Client 1 -- have -- n Order n -- <is composed of> -- m Product
+=> trong thực tế người ta thg chia ra nhiều bảng ra như v vì VD TH2 ta có thể biết 1 product được mua cùng những product nào trong Order vì có bảng riêng order sẽ lợi hơn. Cách 1 sẽ k thể hiện được nếu client mua lần 2 lần 3. khi đó buy sẽ phải có 1 trường quantity chẳng hạn
+
+Th2: 1 entity có attribute multivalue cũng tách ra được
+VD: Employee -> Child -> name, age
+thành: Employee 1 -- <have> -- n Child -- name,age
+-> K có employee vẫn vào được bảng child vì nó bị tách riêng chứ k còn là 1 thuộc tính của Employee nữa. Nếu cả bố và mẹ của child cùng là employee thì sẽ duplicate.
+
+-> Khi JOIN 2 bảng mà k JOIN primary key thì có thể ra nhiều kết quả hơn bình thường.
+R1(sid, age), R2(sportid, age) nếu ta JOIN age vào với nhau có thể ra môn sportid mà sid k chơi, cứ thêm 1 môn sport trùng age là lấy lại ra môn đó dù id k chơi
+
+-> Toàn bị nhầm thứ tự về quan hệ số lượng: A n m B thì A 1 n X n 1 B
+Kể cả A 1 n B ta cũng có A 1 n X n 1 B tức đều về 2 cái 1-n hết
+
+
+
+# Normalization 
+
+
+
+# Functional dependency:
+-> BT: Để chứng minh 1 FD từ nhiều FD, ta có thể cứ augmenting và reflexity nó lên tới full r tính tiếp với trans -> biến đổi dãy đó transitive cho nhau
+
+-> F là 1 phủ của G nếu: mọi FD trong G đều thuộc F+ hay mọi FD trong G đều có thể inferred from F
+Cụ thể: ta xét từng FD trong G và chứng minh nó nằm trong F+
+-> F và G equivalent nếu: F là phủ của G và G là phủ của  F
+VD: Prove that F = {A → C, AC → D, E → AD, E → H} and G = {A → CD, E → AH} are equivalent
+• For each FD of F, prove that it is in G+ 
+• A → C: (A)+(g) = ACD chứa C, so A → C thuộc G+ => Bởi vì A+ = ACD tức có A -> ACD thì C là tập con của ACD thì A chả suy ra được C còn gì. Ta cứ tìm closure của vế trái để ra được các thứ mà vế trái có thể infer ra
+=> F+ thuộc G+
+• For each FD of G, prove that it is in F+
+(the same) => G+ thuộc F+
+=> F+ = G+
+
+-> Tìm minimal cover có bước cuối là check loại bỏ với transitive rule
+FD là canonical form tức là form mà bên phải chỉ có 1 attribute
+Các bước là: tách ra -> loại bỏ -> rút gọn cuối
+
+-> Kinh nghiệm để xác định primary key thì mọi phần tử cx coi là 1 primary key và ta trừ dần các atts đi xem cái nào trừ được, k trừ được thì thôi
+Kinh nghiệm xác định functional dependency(là quan hệ phụ thuộc ->):
+Định luật armstrong cho phép biến đổi các FD qua lại lẫn nhau, nhờ nó mà tìm ra nhiều FD và ta cần chọn ra FD phù hợp.
+Với các atts bên phải ta loại trừ dần vì nó phụ thuộc vào các atts bên trái mà bên trái mà có thì sẽ refer được tới cái bên phải. Nếu cái nào k xh bên phải thì nó buộc là part of key
+VD: A->BC, CD->E và ABCDE thì bên phải ta loại dần là loại E vì CD có r xong ta loại BC và A có rồi thì còn AD k loại được nx nên AD làm minimal key
+=> vc change order của vc loại trừ dần các key khác nhau có thể tạo ra nhiều minimal key cho 1 FDs
+
+Pro: VD quan hệ 1-1 teacher và class với quan hệ teacher dạy class đó. Ta k nên làm kiểu classID là foreign key của teacher mà nên dùng teacher làm foreign key của classID sẽ tốt hơn vì 1 class buộc có ít nhất 1 người manager quan lý nó chứ 1 teacher có thể k dạy class nào
+Nói 1 cách khó hiêu hơn thì teacher -> class tức 1 class chỉ được xác định khi có teacher vì k có trường teacher thì k xác định được 1 row mà. Hay: X->Y thì X>Y hay Y là tập con của X và số phần tử của X >= số phần tử của Y
+Còn quan hệ 1-many thì buộc dùng 1 chiều chứ k được lựa chọn như trên.
+
+-> Có 3 kiểu FD: full, partial và transitive
+Transitive là kiểu A->B->C thì A->C là 1 transtive FD tạo từ 2 FD kia
+
+A->B nó cũng giống như định nghĩa ánh xạ bình thường, k có 2 A trùng nhau nhưng B thì có nên |B| <= |A|
+
+-> closure of F: giả sử F là 1 FD thì các FD khác suy ra được từ F dựa vào các định lý bth gọi là closure of F, là F+
+closure of a set of attribute based on F: là X+ là set of attribute xác định từ X bởi F. Vd F có A->B thì X là (A) thì X+ là (AB) vì B suy ra được từ A. Có dạng bài cho tìm cái này. Để check 1 cái có thuộc closure của F hay k ta cũng cứ tìm X+ của vế trái là ra. 
+Có nhiều dạng bài viết liên quan đến FD.
+
+Để tìm closure function, xuất phát từ 1 cục X -> lấy từng dependency trong F nếu vế trái là tập con của X thì X U= vế phải
+
+Nếu nói F={A->CD, E->AH} thì F+ là (A)+ U (E)+ 
+
+AB -> C thì AB -> ABC được
+
