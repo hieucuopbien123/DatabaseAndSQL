@@ -1,0 +1,5 @@
+-> So sánh 2 strings trong SQL, dùng = nhanh hơn LIKE vì LIKE nó phải interpret wildcard để ss. Chỉ dùng LIKE khi bắt buộc.
+
+
+
+

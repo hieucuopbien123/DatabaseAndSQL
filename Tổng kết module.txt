@@ -211,7 +211,7 @@ Khi đã tạo procedure, vào database của ta -> Programmability -> Stored Pr
 
 Proc trả về giá trị có 2 cách là biến OUTPUT lưu giá trị or RETURN giá trị
 
-View có max 1024 statement, proc có max 1024 params.
+View có max 1024 statements, proc có max 1024 params.
 
 -> Procedure cũng như view, k cho người dùng thao tác với bảng trực tiếp và tái sử dụng mạnh. Procedure k gắn với database hay object cụ thể nào như view. Dùng stored procedure thì code nó để modify query sẽ dễ hơn là xây dựng câu lệnh bằng GUI, GUI chỉ cần gọi nó và k cần đổi gì thêm vì vc chỉnh sửa thế nào thì ta tự code trong procedure ok. Giảm lượng traffic khi gửi qua mạng vì 1 lời gọi execute procedure sẽ tốt hơn gửi từng dòng lệnh query qua mạng để execute.
 Phân biệt procedure và function: procedure thg dùng để query r lấy output gửi cho 1 ứng dụng cụ thể dùng mang tính thực tiễn, trong khi function như 1 query trả ra kết quả cho 1 query khác. Function có thể return ra 1 bảng và k thể thay đổi môi trường server hay môi trường hệ điều hành. 
@@ -384,11 +384,19 @@ Mở table -> vào indexes trong SSMS sẽ thấy các indexes tạo ra
 Vc tối ưu chỉ mục sẽ giúp xác định vị trí của dữ liệu cần tìm. VD tìm 1 thứ bình thường sẽ duyệt hết vài triệu record trong bảng nhưng khi có index thì chỉ cần tìm vài trăm
 Khi tạo PRIMARY key thì cũng chính là đánh chỉ mục gọi là clustered index, các hàng k được trùng dữ liệu với nhau. Các loại chỉ mục kp PRIMARY sẽ gọi là secondary index or non-clustered indexes
 
-Clustered index giúp tìm kiếm trong table nhanh hơn nhưng insert delete chậm hơn. Bất kể kiểu tìm kiếm nào đều có tốc độ tìm kiếm và update dữ liệu nghịch nhau. Trong các cơ sở dữ liệu lớn mới thấy rõ sự khác biệt về tốc độ. Nonclusterd index có thể giúp tìm kiếm nhanh hơn nhưng update vẫn nhanh, update chỉ thêm 1 trường index nên k đáng kể nhưng nó lại có thể tối ưu vì data so le và tốn thêm bộ nhớ. Tức vẫn k thể có cách nào tăng tốc mà hoàn hảo cả đâu, cái gì cx đánh đổi và vc xđ đánh đổi như nào phải làm ngay từ đầu khi tạo database.
+Clustered index giúp tìm kiếm trong table nhanh hơn nhưng insert delete chậm hơn. Bất kể kiểu tìm kiếm nào đều có tốc độ tìm kiếm và update dữ liệu nghịch nhau. Trong các cơ sở dữ liệu lớn mới thấy rõ sự khác biệt về tốc độ. Nonclustered index có thể giúp tìm kiếm nhanh hơn nhưng update vẫn nhanh, update chỉ thêm 1 trường index nên k đáng kể nhưng nó lại có thể k tốt vì data so le và tốn thêm bộ nhớ. Tức vẫn k thể có cách nào tăng tốc mà hoàn hảo cả đâu, cái gì cx đánh đổi và vc xđ đánh đổi như nào phải làm ngay từ đầu khi tạo database.
+
+PRIMARY KEY có default index là clustered, UNIQUE KEY có default index là NON_CLUSTERED và được NULL
 
 K thể đánh 2 index cùng trường. Các trường được đánh index có thể dùng where tìm kiếm tốc độ cao. 1 table ta chỉ được tạo ra 1 cái index, cái index đó có thể đánh được nh trường
 
-K đánh index cho text
+-> Sự khác biệt giữa multicolumn index và multiple index:
+VD: age, name, id ta đánh 3 non clustered index độc lập hay đánh 1 index cho cả 3 trường khác nhau ntn
+
+--> Nếu đánh mỗi trường 1 index, ta có thể search tốc độ nhanh theo từng trường riêng biệt. Nếu search theo cả 3 trường thì vc đánh index từng trường có thể k làm cho tốc độ nhanh hơn mà nó vẫn chỉ search nhanh 1 trường trong đó trên cây B tree của nonclustered index đó, các trường còn lại có thể search k nhanh
+--> Nếu đánh multicolumn index cho cả (age, name, id) thì tốc độ search (age) or (age, name) or (age, name, id) cho tốc độ nhanh hơn bth. Nhưng nếu chỉ search trường age cho tốc độ k nhanh bằng đánh chỉ 1 index cho age. Nếu search nh theo id or name thì chậm hơn nh so với đánh lẻ từng index.
+
+Index giúp nhanh hơn về mọi mặt. VD 2 bảng join với nhau 1 trường thì đánh index trường đó ở 1 trong 2 bảng sẽ giúp query join nhanh hơn. Thông thường khi 2 bảng join với nhau, ta thg join primary key và trường này đã tự động được đánh index nên đã nhanh sẵn r.
 
 
 

@@ -73,13 +73,13 @@ A left join B in ra tất cả cái mà cả A và B có cùng 1 giá trị trư
 CROSS JOIN là tích đề các, muốn điều kiện thì vẫn dùng WHERE được. 
 Vc viết 2 bảng liên tiếp nhau FROM table1, table2 cũng là tích đề các của 2 table. VD: bảng 1 có trường A là 1,2,3 và bảng 2 có trường B là A,B,C thì bảng A,B có 2 trường AB là 1A,1B,1C,2A,2B,2C,3A,3B,3C
 
--> Phân biệt: FULL OUTER JOIN, LEFT JOIN, RIGHT JOIN, INNER JOIN, CROSS JOIN
+-> Phân biệt: FULL OUTER JOIN, LEFT JOIN, RIGHT JOIN, INNER JOIN, CROSS JOIN, NATURAL JOIN
 Khi reference FOREIGN KEY thì giá trị của FOREIGN KEY phải tồn tại mới thêm được vào bảng refer
 VD: A -> B với B có 1,2,3,4 và A có 101 -> 2, 102 -> 2, 103 -> 3
 B LEFT JOIN A -> 1 NULL, 2 101, 2 102, 3 103, 4 NULL => miễn có data khác nhau sẽ hiện tất cả, kể cả trùng
 B RIGHT JOIN A -> 2 101, 2 102, 3 103 => nó đảm bảo các giá trị của A luôn đầy còn B k cần
 B INNER JOIN A -> các thứ khác NULL ở cả A và B
-B FULL OUTER JOIN A -> mọi thứ đảm bảo có ở cả A và B
+B FULL OUTER JOIN A -> mọi thứ đảm bảo có ở A or B
 B CROSS JOIN A -> CROSS JOIN k cần ON và sẽ lấy tích đề các ở đây A có 3 giá trị, B có 4 giá trị nên tổng 12 giá trị
 FROM A, B -> Y hệt CROSS JOIN, người ta gọi là self join
 FROM A a, B b WHERE a.id = b.id -> Y hệt INNER JOIN
