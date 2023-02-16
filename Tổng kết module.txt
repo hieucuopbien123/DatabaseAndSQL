@@ -3,6 +3,8 @@ Database và SQL: Mọi dữ liệu mặc định là SQL Server với SSMS
 
 -> SSMS F5 chạy thì query nếu fail ở 1 dòng mà k ảnh hưởng thì nó chạy đến đâu thực hiện đến đấy, ở đây k có biên dịch như các lang bth
 
+Khi cài SSMS, luôn có chương trình SQLCMD để dùng câu lệnh SQL trên terminal được
+
 
 
 # Basic:
