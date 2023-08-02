@@ -403,6 +403,7 @@ Index giúp nhanh hơn về mọi mặt. VD 2 bảng join với nhau 1 trường
 
 
 # Câu lệnh SELECT
+# Tăng tốc database***
 
 
 
@@ -431,3 +432,37 @@ Thuộc tính recursive thì thêm data như nào. VD 1 bảng:
 Acc(AccID, Password, AccID_Parent) với AccID_Parent refer đến primary key của Acc là AccID kiểu ta muốn tạo 1 list các tài khoản con được nối từ tk cha ấy => rất đơn giản, khi tạo database ta chưa đặt reference key vội mà tạo 1 tk root để quản trị trước đã với trường AccID_Parent trùng vơi AccID, sau đó mới thêm constraint primary key với alter table là được
 
 
+
+
+Tổng quan:
+***
+# Basic
+# Câu lệnh Database
+# Câu lệnh Table
+# Câu lệnh Schema
+# Phân quyền
+# Câu lệnh view
+# Temp Table
+# Biến table
+# Câu lệnh procedure
+# Câu lệnh function
+# Câu lệnh Trigger
+# Câu lệnh transaction
+# Biến type loop condition rule
+# Câu lệnh cursor
+# Common Table Expression(cte)
+# Câu lệnh index
+# Câu lệnh SELECT
+# Tăng tốc database***
+# Other
+***
+***
+# Storage
+# Đánh index
+# Algebric expression and query processing
+# Transaction
+## Database design
+# ERD
+# Normalization
+# Functional dependency
+***

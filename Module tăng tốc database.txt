@@ -1,0 +1,249 @@
+Tăng tốc database
+
+-> Đánh index luôn là phương pháp basic nhất. Nhiều loại database như MySQL, PostgreSQL tự động đánh index cho primary key và ta cũng có thể tùy chỉnh điều này. Lưu ý kp lúc nào primary key đánh index cũng tốt. 
+
+Index sẽ search nhanh hơn nhưng làm tốn thêm dung lượng lưu trữ, update lâu hơn nhưng k đáng kể. 
+Để làm được điều đó, nó dùng kết hợp 2 cấu trúc doubly linked list và cây tìm kiếm. 
+
+- Doubly linkedlist giúp tốc độ update nhanh hơn, vd khi thêm node mới chẳng hạn. 
+Thực tế 1 node trong danh sách liên kết chứa 1 or nhiều cục index, mỗi node gọi là index leaf nodes. Vì đơn vị nhỏ nhất database lưu trữ là 1 page or 1 block với dung lượng lớn hơn dung lượng của 1 row index, database lưu index vào các khoảng trống đó để tránh lãng phí. Như v khi thêm 1 index, ta có thể phải dịch phần tử ở 1 vài node mới xếp vào được:
+Node1[e1,e2,e3] - Node2[e4,,e5] - ...
+Chèn e6 vào giữa e1 và e2 phải sửa 2 node => vẫn nhanh hơn array bth phải dịch hết
+Node1[e1,e6,e2] - Node2[e3,e4,e5] - ...
+
+- Cây tìm kiếm B-Tree: gọi là balance tree vì kc từ rootnode tới mọi leafnode là như nhau
+Các index leaf node được nối bằng doubly linked list là implement về logic nối các địa chỉ vùng nhớ với nhau, còn lưu trữ vật lý thì 1 leaf node có thể nằm ở bất cứ vị trí nào. Do đó để tìm kiếm nhanh họ dùng thêm BTree.
+                          __________[24 83]___________________  _____ ....        (Rootnode)
+                         /                                    \                       
+         ____[12 17 21 24]__________             ___[46 53 57 83]____________     (Branchnode)
+        /        |         \        \           /         |         \        \  
+[10 11 12][14 16 17][18 20 21][22 23 24][40 43 46][46 53 53][55 57 57][67 83 83]  (Leafnode)
+
+Các leaf node lưu data thực (tùy loại index) được nối với nhau bằng doubly linked list để update nhanh. Các leaf node cũng nằm trong 1 BTree, node cha lưu index lớn nhất của node con. 
+Giả sử cần tìm node 20, nó sẽ tìm từ root node vị trí >=20 là 24 sang branch node [12 17 21 24], sang tiếp leafnode [18, 20, 21] và tìm tuần tự từ lớn tới nhỏ 21 -> 20 là index cần tìm.
+Chú ý có thể 1 index nằm ở 2 leafnode như index 46 ở trên nên cần tìm từ lớn tới nhỏ. 
+
+Điểm lợi là tốc độ tìm kiếm nhanh và nếu tăng số lượng bản ghi lên tới vài triệu, độ sâu của cây vẫn rất nhỏ. VD 1 node có 100 index thì mỗi lần tăng 1 level, số lượng index có thể lưu tăng lên cả trăm lần
+
+-> TH index vẫn bị chậm:
+Khi truy vấn dữ liệu theo index, cần làm 3 bước: 
+- Duyệt cây
+- Duyệt các leaf node vì sau khi biết node nào, có thể index nằm tại nhiều node và ta lại phải duyệt tiếp index ở các node
+- Lấy data thực trong bảng 
+
+Với BTree, việc duyệt cây tìm ra leafnode chắc chắn là nhanh. Nhưng duyệt các leaf node và lấy data thực có thể bị lâu:
+- VD để duyệt index 57, nó tìm được 1 node có max index > 57. Rồi duyệt từng index trong vài leaf node sau đó cho đến khi tìm được index < 57 thì kết thúc. Nó có thể phải duyệt nh leafnode để chắc chắn lấy hết các bản ghi cần có.
+Khi đó data trong máy luôn được lưu trữ dưới dạng block, các leaf node k nằm trên cùng 1 block và cũng k ở các block liên tiếp nhau nên duyệt sẽ mất tg
+- VD duyệt được 2 cái index 27 trên cùng 1 leaf node nhưng ref tới bảng thực thì 2 address data này lại ở 1 block khác nhau. Tương tự như trên 2 block k liền kề or k nằm cùng 1 block sẽ search vẫn bị lâu.
+=> Đó là 2 NN chính và klq gì tới việc duyệt cây BTree, cây đó luôn cân bằng và duyệt nhanh. 
+
+Cơ chế 3 kiểu lấy data từ DB:
+- Index unique scan: Đánh index cho các cột mà tổ hợp có giá trị unique k trùng nhau và search trên nó đó với ràng buộc cho output là 1 row duy nhất. Ta chỉ cần duyệt cây tìm ra đúng 1 node r lấy data từ 1 block duy nhất. Tốc độ luôn là nhanh nhất có thể vì 3 bước truy vấn bên trên đều tối ưu.
+- Index range scan: Duyệt cây rồi duyệt theo leaf node tìm tất cả bản ghi thỏa mãn. 
+- Table access by index rowid: Method dùng khi lấy data ở cột k được đánh index. Khi duyệt theo index ra các row cần lấy thì có luôn data từ các cột được đánh index rồi. Nếu ta cần lấy data từ các cột khác ko được đánh index, nó phải lấy tiếp rowid ra rồi search row đó trong bảng. Bước này tùy vào row id có index hay không mà duyệt tiếp
+
+VD: Đầu tiên duyệt bằng index range scan ra các row, sau đó cần lấy data từ 1 trường k được đánh index của row, nó sẽ lấy id của từng row và áp dụng tiếp table access by index rowid lấy ra data trường đó.
+=> Đó là TH câu query bị chậm dù đã đánh index vì vẫn phải search nhiều.
+
+-> Viết câu lệnh tránh index chậm
+--> Lệnh WHERE cơ bản
+Lệnh WHERE A = B khi chỉ có 1 câu ss = duy nhất trên khóa chính luôn thì sẽ k bị chậm. 
+Đầu tiên dùng index unique scan rồi dùng table access by rowid, do chỉ có 1 kết quả duy nhất nên 3 bước đều chỉ chọc vào bảng 1 lần nên k bị chậm
+
+--> TABLE ACCESS FULL: table access full là pp duyệt full bảng tuần tự để tìm các data cần lấy. Độ phức tạp tuyến tính với kích thước bảng. Nó xảy ra khi có trường trong câu lệnh WHERE k đánh index
+
+Đa phần kiểu duyệt này là chậm nhưng có TH nó chạy nhanh hơn index. VD ta cần lấy gần hết các row trong bảng với 1 điều kiện nào đó:
+- Nếu dùng index sẽ tốn thời gian tìm index với index range scan rồi đọc từng block trong bảng để lấy từng row với table access by index rowid
+- Nếu dùng table access full thì nó biết là phải check cả bảng nên sẽ đọc nhiều block cùng 1 lúc nên dù đọc nhiều dữ liệu hơn nhưng thao tác đọc ít hơn, vì đằng nào cũng lấy gần hết nên tốc độ nhanh.
+=> Như kiểu ta cần đọc 90% 1 cuốn sách thì việc đọc liên tiếp từng cục 10 trang sẽ nhanh hơn tra mục lục trang 1, đọc trang 1, lại tra mục lục trang, đọc trang 2 cho đến hết quyển
+
+--> Index kết hợp: 
+VD database của comp có nhiều nhân viên với employeeid là primary key. Về sau sát nhập thêm 1 công ty khác vào thì ko thể hợp 2 bảng employee lại vì primary key bị trùng. Giải pháp là gom 1 bảng nhưng primary key gồm 2 trường (employeeid, subid) theo đúng thứ tự đó với subid là id của employee công ty được sát nhập vào. 
+
+Với multicolumn unique index, nếu search đủ cột ra index unique scan thì tốc độ vẫn nhanh. Nhưng nếu ở trên, ta search theo subid thôi thì sẽ dùng table access full.
+Khi dùng index kết hợp, nó chỉ search nhanh theo index nếu ta search đủ "n cột đầu tiên". NN là vì BTree đánh theo thứ tự, VD:
+.. -> [employeeid = 10][subid = 20] -> [employeeid = 8][subid = 20]
+                                    -> [employeeid = 9][subid = 18]
+                                    -> [employeeid = 8][subid = 29]
+                                    -> [employeeid = 10][subid = 20]
+=> 2 cái subid = 20 k đứng cạnh nhau trong 1 block nên search theo subid bị chậm. 
+
+Ở case này ta có thể đánh index thứ tự (subid, employeeid) thì search theo (subid) và (subid, employeeid) sẽ nhanh, search theo (employeeid) sẽ chậm. Hoặc cách khác là đánh thêm 1 cái index nữa với subid nhưng sẽ tốn thêm bộ nhớ
+Nếu search theo nhiều trường mà có chứa các trường đánh index thì cũng được dùng và có thể chạy nhanh hơn so với search bth 1 tí.
+
+--> Nếu search nhiều trường và có các trường được đánh index tức có nhiều cách tạo ra 1 câu truy vấn thực sự. Khi đó query optimizer sẽ tự chọn phương án thực thi tốt nhất (chưa chắc dùng index đã là tốt nhất) 
+
+Query Optimizer hay query planner là 1 phần của database chuyển SQL thành execution plan. Nó tối ưu bằng 2 cách:
+- Cost based optimizer tạo ra nhiều execution plan khác nhau và tính chi phí từng plan dựa vào số thao tác cần xử lý
+- Rule based optimizer sẽ tạo execution plan dựa vào 1 tập rule cố định nào đó và kém linh hoạt hơn => k dùng nx
+
+Cơ chế nó chọn execution plan phụ thuộc vào nhiều yếu tố, số lượng bản ghi hay sự phân bố bản ghi cũng có thể ảnh hưởng tới thời gian phản hồi. Nên nó phải dựa vào statistics của database.
+Statistics qtr nhất của bảng là số dòng, số block. Statictics qtr nhất của 1 index là độ sâu của tree và số node lá. Optimizer dùng các giá trị này để ước lượng thông số selectivity của mệnh đề WHERE. Selectivity = cardinality/(số bản ghi)
+
+Mặc dù trình optimizer tự tìm execution plan tối ưu, ta vẫn có thể ép 1 câu lệnh k dùng index hoặc dùng 1 index cụ thể.
+VD1 ép câu lệnh k dùng index mà scan table:
+SELECT * FROM [WideWorldImporters]
+WITH(INDEX(0))
+WHERE CustomerID = 191
+
+VD2 ép câu lệnh dùng 1 index cụ thể
+SELECT * FROM [WideWorldImporters] WITH (INDEX ([FK_Sales_Invoices_AccountsPersonID])) WHERE CustomerID = 191
+
+-> Index chậm do dùng hàm
+Vd đánh index last_name mà tìm kiếm case insensitive kiểu:
+SELECT first_name, last_name, phone_number FROM employees WHERE UPPER(last_name) = UPPER('winand')
+=> Nó sẽ tìm TABLE ACCESS FULL. 
+
+Để tránh điều này, phải xác định database tìm kiếm theo kiểu nào từ trước và đánh function-based index(FBI). Vd: 
+CREATE INDEX emp_up_name ON employees (UPPER(last_name))
+=> Như v sẽ dùng INDEX RANGE SCAN rồi đến TABLE ACCESS BY INDEX ROWID
+
+- Trình biên dịch có thể tính trước giá trị bên phải vì nó fix cứng là 'WINAND' tại compile time. Sau đó perform xử lý thực với: SELECT first_name,last_name,phone_number FROM employees WHERE UPPER(last_name) = 'WINAND'
+- ORM đôi khi tự thêm lower upper mà dev kb. ORM (Object-Relational Mapping) là kỹ thuật ánh xạ data từ database sang object trong ngôn ngữ lập trình đang dùng.
+
+--> Mặc dù ở TH trên ta đã đánh index nhưng có thể rơi vào 1 TH là index range scan duyệt 40 rows, nhưng TABLE ACCESS BY INDEX ROWID lại duyệt 100 rows. Điều này là do statistic có vấn đề
+
+Xét TH oracle statistics dùng function-based index: nó duy trì thông tin về các giá trị distinct của các cột trong bảng cho mục đích thống kê. Những số liệu này cũng được sử dụng lại nếu cột đó là 1 phần của nhiều index. Khi 1 index FBI mới sinh ra, nó sẽ không update table statistics 1 cách tự động. Do đó dẫn đến TH đánh index 40 rows nhưng table access by rowid lại duyệt đến 100 rows. 
+=> Sau khi cập nhật statistics, số lượng row đã về 1, tốc độ nhanh hơn => Khi dùng Oracle database SQL, nếu đổi index thì phải update statistics của table để tối ưu query của người dùng.
+
+--> MySQL và SQL k hỗ trợ trực tiếp FBI, giải pháp là sinh ra 1 cột mới, VD 1 cột riêng lưu thêm UPPER(last_name) và đánh index cột đó là có tốc độ cao ngay. 
+
+Tùy vào database khác nhau mà cú pháp khác nhau (chat GPT). VD trong SQL, khi dùng như v phải dùng cột mới sinh ra với từ khóa PERSISTED. 
+PERSISTED báo 1 cột sau khi được tính toán lưu vào bảng thì SQL sẽ tự động update giá trị cột đó khi các data các cột liên quan thay đổi. Còn cột non-persisted bth thì ta luôn phải tự truy vấn update.
+
+--> Ta có thể đánh index với đủ loại function, string A + B hay thậm chí là Function tự định nghĩa. 
+
+Tuy nhiên có các function kiểu động, mỗi lần query dù data trong db k đổi nhưng kết quả vẫn ra khác nhau thì k có tác dụng. 
+VD function lấy tuổi bằng ngày sinh trừ SYSDATE thì SYSDATE đổi liên tục nên kết quả lấy mỗi lần là khác nhau. Khi lưu vào index sẽ luôn cố định như thời điểm tạo, vì SYSDATE đổi và các data khác k đổi thì k có cơ chế nào để DB tự động update cột đó cả
+VD tương tự khi function dùng hàm lấy số RANDOM
+
+Do đó database yêu cầu các function đánh index phải đi kèm 1 từ khóa như DETERMINISTIC(Oracle) or IMMUTABLE(PostgreSQL) để báo function k tự thay đổi giá trị theo thời gian.
+
+Nên tránh việc đánh thêm index vì tăng chi phí lưu trữ và ghi. Chỉ nên dùng 1 index cho 1 bảng.
+
+-> Query với tham số: 
+Khi 1 query mới xh, trình tối ưu sẽ phân tích lấy ra execution plan tốt nhất rồi mới thực hiện. Các db SQLServer và Oracle có thể sử dụng lại execution plan nhiều lần với câu lệnh giống nhau giúp tiết kiệm chi phí xây 1 execution plan mới. Nó sẽ áp dụng khi câu lệnh giống hệt nhau dù có khác 1 vài tham số. 
+=> Do đó dùng tham số giúp tái sử dụng exection plan. 
+
+Dùng tham số giúp tái sử dụng execution plan nhưng có thể làm chậm query khi tham số đó ảnh hưởng tới số lượng dữ liệu.
+VD: Query tham số A có cost là 100 và tìm được 100 bản ghi với execution plan là tính theo index. Query với tham số B có cost là 1000 và tìm được 1000 bản ghi với cùng execution plan đó. Trong TH B, dùng fulltable scan cho tốc độ nhanh hơn vì duyệt gần hết bảng nhưng do query theo tham số nên nó tái sử dụng execution plan cũ nên bị chậm.
+Nếu k dùng tham số, cơ chế db sẽ dựa vào 1 cái histogram lưu tần suất data các cột trong bảng. Nó thấy tần suất khác nhau nên cost khác nhau, trình tối ưu sẽ tự tìm phương án tốt nhất là fulltable scan cho TH B
+
+Bản chất là vì khi dùng tham số thì trình biên dịch và trình tối ưu kb giá trị runtime của tham số. Nó tính lần đầu rồi lưu vào cache và dùng hết cho các lần sau khi thấy cùng query. Còn dùng câu lệnh bth thì nó biên dịch và xây execution plan mới mỗi khi chạy 1 query mà chỉ khác nhau 1 tí.
+Trình tối ưu và câu lệnh càng phức tạp, càng cần cache nhiều. SQL Server và Oracle có cơ chế để tự biến cấu truy vấn thành dạng truyền tham số. Tính năng này được gọi là CURSOR_SHARING (Oracle) hoặc forced parameterization (SQL Server).
+
+=> Người ta khuyên là để tối ưu tốc độ, ta luôn dùng tham số khi thấy data trả ra trong các TH không chênh lệch nhiều (hay ko ảnh hưởng tới execution plan). Phần này khá thừa vì ta luôn dùng tham số hóa để tránh SQL Injection
+
+Chú ý tham số đang nói tới là giá trị thực để query chứ tên bảng hay tên cột thì dùng tham số k có tác dụng tái sử dụng execution plan. VD "SELECT * FROM ? WHERE ?". Nếu muốn thực hiện điều này phải dùng Sql động (Dynamic SQL)
+
+--> Query theo range kết hợp
+VD query kết hợp:
+SELECT first_name, last_name, date_of_birth
+FROM employees
+WHERE date_of_birth >= TO_DATE(?, 'YYYY-MM-DD')
+   AND date_of_birth <= TO_DATE(?, 'YYYY-MM-DD')
+   AND subsidiary_id  = ?
+=> Đánh index vẫn có tác dụng như bth với query theo range như BETWEEN, >=, <=. Ở đây nếu ta đánh index 1 cặp theo thứ tự (date_of_birth, subsidiary_id) thì nó sẽ search date_of_birth rất nhanh tìm được các block nhiều node lá liên tiếp. R chạy tuần tự từng node lá để tìm subsidiary_id
+=> Nhưng nếu đánh index theo thứ tự (subsidiary_id, date_of_birth) thì tìm 1 node lá ra luôn cho tốc độ nhanh nhất. 
+
+- Rule of thumb1: Khi đánh index cho nh phần tử, luôn đánh cho trường được truy vấn với số lượng ít hơn ở bên trái.
+- Ngoài ra họ còn ưu tiên những cột có độ selective lớn ở bên trái. Tức là ở trên họ thường query theo subsidiary_id hay theo date_of_birth nhiều hơn thì đánh index theo nó. 
+VD nếu nhiều lúc họ toàn query theo 1 trường date_of_birth thì nên đánh index theo nó bên trái hoặc đánh thêm 1 index riêng cho date_of_birth
+
+Trong db, khái niệm access predicates là condition theo indexed column, còn filter là condition với cột k được đánh index.
+
+-> Nên đánh 1 index 2 trường tốt hơn đánh 2 index và mỗi index 1 trường trong đa số TH. 
+
+Xét TH:
+SELECT first_name, last_name, date_of_birth FROM employees
+WHERE UPPER(last_name) < ? AND date_of_birth < ?
+=> Ở đây ta nên đánh index 1 trường duy nhất Vd last_name, vì nhân viết xếp theo tên từ A-Z sẽ không đảm bảo tuổi cũng đúng thứ tự đó nên dù đánh index 2 trường cũng chỉ search như việc đánh index 1 trường thôi (search index 1 trường r duyệt tuần tự node)
+
+=> Dù ta biết là khi search nh trường và đánh index nh trường thì selective cao hơn nên ở bên trái, nhưng ở case này selective chả biết cái nào cao hơn. Vd đánh theo date_of_birth và search những người trên 50 tuổi, xong có mấy nghìn người trên 50 tuổi thì lại search tiếp last_name theo index cũng chả nhanh hơn mấy.
+
+=> Nếu case này ta đánh 2 index last_name và date_of_birth thì cũng ok. Khi đó nó tốn thêm thời gian để duyệt cả 2 index rồi merge kết quả lại bằng phép join. Nói chung là thêm bộ nhớ và vi xử lý, còn tốc độ vẫn k nhanh hơn 1 index là mấy
+
+-> Truy vấn với like
+Ký tự % là wildcard có thể biểu diễn cho bất cứ ký tự nào
+
+Khi ta search trường text với LIKE, index chỉ có hiệu quả cho phần text ở trước ký tự wildcard đầu tiên. 
+Vd search LIKE "WIN%D" thì nó sẽ dùng index range scan tìm row có cột index bắt đầu bằng "WIN", sau đó dùng table access by index rowid để tìm những row thỏa mãn đúng "WIN%D"
+
+Tức nếu ta đánh wildcard ngay đầu tiên, nó sẽ phải duyệt toàn bộ bảng để trả về kết quả. Do đó khi search theo text với LIKE nên biết được vài ký tự prefix của đoạn text đó nếu đánh index để có tốc độ nhanh hơn
+
+-> Có nhiều loại index
+- Merge index: 1 loại chỉ mục tối ưu truy vấn bằng cách kết hợp nhiều chỉ mục của DB ban đầu tạo ra 1 chỉ mục mới chuyên dùng cho truy vấn kết hợp giữa 2 hay nhiều bảng, nhiều cột
+- Bitmap index: loại chỉ mục trong DB khi tìm kiếm các giá trị không liên tục hoặc trường có số lượng giá trị duy nhất nhỏ. VD cột lưu enum, boolean,...
+
+Số lượng bitmap index bằng số lượng giá trị unique. Bitmap có length bằng số lượng row của bảng.
+VD 1 bảng có 5 row với trường color có 3 giá trị duy nhất theo thứ tự là: "Red" "Green" "Green" "Green" "Blue". Ta đánh bitmap index cho cột color thì sẽ sinh ra 3 bitmap index là:
+Red: 10000
+Green: 01110
+Blue: 00001
+=> VD search theo color green thì nhìn vào bitmap index của color là thấy ngay row 2,3,4 có color Green. Nó dùng các phép logic để so sánh và khi update
+
+Bitmap index có tốc độ update chậm hơn so vói các loại index khác rất nhiều. Nó cũng tốn không gian lưu trữ hơn khi cả số lượng bản ghi và số lượng giá trị unique lớn.
+VD có thể dùng đánh index cho trường gender khi có 1 triệu bản ghi cũng ok vì chỉ có 2 giá trị duy nhất.
+
+-> Partial indexes
+VD trong hệ thống queue mà ta muốn lấy từ database các message chưa qua xử lý cho 1 người nhận cụ thể:
+SELECT message FROM messages WHERE processed = 'N' AND receiver = ?
+=> Với rule of thumb, ta biết nên đánh index (processed, receiver) vì processed có selective cao hơn. Tuy nhiên nó bao gồm cả các row mà ít khi được query đến, vì ta chỉ có nhu cầu query khi processed='N'
+
+Để k tốn thêm bộ nhớ cho những bản ghi này, ta có thể dùng:
+CREATE INDEX messages_todo ON messages (receiver) WHERE processed = 'N'
+=> Chỉ những row thỏa mãn điều kiện WHERE mới được index. ĐK WHERE có thể phức tạp tùy ý nhưng phải là deterministic (cùng đầu vào luôn cho cùng 1 đầu ra, VD k được chứa GetDate()).
+
+VD2 nếu trong 1 table mà ta query rất nhiều câu lệnh sau:
+SELECT message FROM messages
+WHERE processed = 'N'
+=> Best case là đánh index (processed, message) => dữ liệu sẽ chỉ cần lấy trên index BTree mà k cần vào bảng, tức chỉ cần mỗi index range scan. Tuy nhiên điều này chỉ ok khi số lượng row có processed='N' ít vì lưu cả message lên thẳng BTree sẽ tốn tài nguyên nếu quá nhiều row.
+
+
+
+-> NULL trong Oracle Database
+Trong database bth thì cái gì đi với NULL cũng là NULL, nhưng Oracle database lại coi empty string là NULL
+VD dùng toán tử X || NULL sẽ ra X trong Oracle DB, còn các DB khác ra NULL.
+
+Trong Oracle database, khi đánh index 1 cột thì các giá trị NULL của cột đó sẽ k có trong index. VD:
+CREATE INDEX x ON A  <=>  CREATE INDEX x ON A WHERE A IS NOT NULL
+
+VD ta đánh index trường date_of_birth trong Oracle DB thì query "SELECT * FROM A WHERE date_of_birth IS NOT NULL" sẽ k được hỗ trợ bởi index
+Để xử lý case này ta có thể đánh index 2 trường (date_of_birth, X) với trường X là 1 trường NOT NULL bất kỳ. Thì mọi bản ghi date_of_birth có NULL vẫn được đánh index và hỗ trợ truy vấn trên. NN vì nó k bỏ qua giá trị NULL, phải đánh index mọi giá trị của date_of_birth mới đánh được index cho X nữa trên cây 
+Cách khác là đánh index kèm 1 constant expression k thể NULL như này: (date_of_birth, '1')
+
+=> Cột not null phải có constraint rõ ràng chứ k được tự hiểu
+
+=> Nếu dùng kèm 1 user-defined function thay vì constant expression, Oracle database k có cách nào biết được liệu function đó có null hay không nên sẽ full scan table để k bỏ sót bản ghi nào. Ta có thể tự ý thêm IS NOT NULL cho function đó thì Oracle tối ưu sẽ tự hiểu là các data cần tìm chỉ nằm trong index nên sẽ dùng index. VD: 
+SELECT * FROM employees
+WHERE date_of_birth IS NULL AND blackbox(employee_id) IS NOT NULL
+Với blackbox là user-defined function chả cần biết có NULL hay không nhưng Oracle sẽ dùng index của date_of_birth để search vì ta có IS NOT NULL. Hàm blackbox luôn trả TRUE nên k ảnh hưởng tới query.
+
+--> 1 số internal function mà Oracle db biết trước đầu ra có null hay không dựa vào đầu vào, có thể dùng thay cho constant expression. VD: 
+CREATE INDEX emp_dob_upname ON employees (date_of_birth, upper(last_name))
+SELECT * FROM employees WHERE date_of_birth IS NULL
+=> Giả sử last_name có constraint NOT NULL nên DB tự hiểu là NOT NULL => Khi dùng thì nên sẽ dùng index date_of_birth khi search
+
+-> Giả lập partial index trong Oracle database
+VD ta cần đánh index trường receiver chỉ khi trường processed = 'N'. Vói database bth thì dùng luôn:
+CREATE INDEX testindex ON messages (receiver) WHERE processed = 'N'
+
+Oracle k hỗ trợ partial index, nhưng lợi dụng tính chất k index NULL của Oracle ta có thể giả lập partial index bằng cách viết 1 function return NULL với các giá trị không muốn đánh index, return giá trị bth vói các giá trị muốn đánh index là xong.
+
+Tạo function giá trị processed = 'N' muốn đánh index, != 'N' thì return NULL thì Oracle sẽ bỏ qua, k đánh index:
+CREATE OR REPLACE
+FUNCTION pi_processed(processed CHAR, receiver NUMBER)
+RETURN NUMBER
+DETERMINISTIC
+AS BEGIN
+   IF processed IN ('N') THEN
+      RETURN receiver;
+   ELSE
+      RETURN NULL;
+   END IF;
+END
+
+Rồi tạo index:
+CREATE INDEX messages_todo ON messages (pi_processed(processed, receiver))
+
+
